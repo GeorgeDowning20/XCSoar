@@ -60,11 +60,11 @@ TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
       break;
     case FlarmTraffic::AlarmType::NONE:
       if (traffic.relative_altitude > (const RoughAltitude)50) {
-        canvas.Select(traffic_look.safe_above_brush);
+        canvas.Select(traffic_look.basic_traffic_brushes[0]);
       } else if (traffic.relative_altitude > (const RoughAltitude)-50) {
-        canvas.Select(traffic_look.warning_in_altitude_range_brush);
+        canvas.Select(traffic_look.basic_traffic_brushes[1]);
       } else {
-        canvas.Select(traffic_look.safe_below_brush);
+        canvas.Select(traffic_look.basic_traffic_brushes[2]);
       }
       break;
     }
@@ -112,7 +112,7 @@ TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
     { 0, 3 },
   };
 
-  canvas.Select(traffic_look.safe_above_brush);
+  canvas.Select(traffic_look.basic_traffic_brushes[0]);
 
   // Select black pen
   if (IsDithered())

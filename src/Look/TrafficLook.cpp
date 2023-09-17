@@ -13,12 +13,13 @@ constexpr Color TrafficLook::team_color_yellow;
 void
 TrafficLook::Initialise(const Font &_font)
 {
-  safe_above_brush.Create(safe_above_color);
-  safe_below_brush.Create(safe_below_color);
-  warning_brush.Create(warning_color);
-  warning_in_altitude_range_brush.Create(warning_in_altitude_range_color);
-  alarm_brush.Create(alarm_color);
+  for (unsigned i = 0; i < num_alt_based_colour_options; i++)
+    {
+      basic_traffic_brushes[i].Create(basic_traffic_colors[i]); // 2x3 array of brushes
+    }
 
+  warning_brush.Create(warning_color);
+  alarm_brush.Create(alarm_color);
   fading_pen.Create(Pen::Style::DASH1, Layout::ScalePenWidth(1), fading_outline_color);
 
 #ifdef ENABLE_OPENGL
