@@ -12,6 +12,13 @@ class Font;
 
 struct TrafficLook {
   static constexpr uint8_t num_alt_based_colour_options = 3;
+  static constexpr uint8_t num_vario_based_colour_options = 3;
+
+  static constexpr Color colorful_traffic_colors[num_alt_based_colour_options][num_vario_based_colour_options] = {
+    {{0xff, 0x66, 0x66}, {0xff, 0xff, 0x66}, {0x66, 0x66, 0xff}}, // light red, light yellow, light blue
+    {{0xff, 0x00, 0x00}, {0xff, 0xff, 0x00}, {0x00, 0x00, 0xff}}, // red, yellow, blue
+    {{0x99, 0x00, 0x00}, {0x99, 0x99, 0x00}, {0x00, 0x00, 0x99}}  // dark red, dark yellow, dark blue
+  };
 
   static constexpr Color basic_traffic_colors[num_alt_based_colour_options] = {
     {0x1d,0x9b,0xc5}, //above
@@ -23,6 +30,7 @@ struct TrafficLook {
   static constexpr Color warning_in_altitude_range_color{0xff,0x00,0xff};
   static constexpr Color alarm_color{0xfb,0x35,0x2f};
 
+  Brush colorful_traffic_brushes[3][3];
   Brush basic_traffic_brushes[3];
   Brush warning_brush;
   Brush alarm_brush;

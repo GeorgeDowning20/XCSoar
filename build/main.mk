@@ -236,6 +236,7 @@ XCSOAR_SOURCES := \
 	$(SRC)/FLARM/Computer.cpp \
 	$(SRC)/FLARM/Global.cpp \
 	$(SRC)/FLARM/Glue.cpp \
+	$(SRC)/FLARM/TrafficClimbAltIndicators.cpp \
 	$(SRC)/BallastDumpManager.cpp \
 	$(SRC)/Logger/Settings.cpp \
 	$(SRC)/Logger/Logger.cpp \

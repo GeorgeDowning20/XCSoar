@@ -17,9 +17,10 @@
 
 void
 TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
-                      bool fading,
+                      bool fading, bool colorful_traffic,
                       const FlarmTraffic &traffic, const Angle angle,
-                      const FlarmColor color, const PixelPoint pt) noexcept
+                      const FlarmColor color, const PixelPoint pt, 
+                      const TrafficClimbAltIndicators indicators) noexcept
 {
   // Create point array that will form that arrow polygon
   BulkPixelPoint arrow[] = {
@@ -59,13 +60,13 @@ TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
       canvas.Select(traffic_look.alarm_brush);
       break;
     case FlarmTraffic::AlarmType::NONE:
-      if (traffic.relative_altitude > (const RoughAltitude)50) {
-        canvas.Select(traffic_look.basic_traffic_brushes[0]);
-      } else if (traffic.relative_altitude > (const RoughAltitude)-50) {
-        canvas.Select(traffic_look.basic_traffic_brushes[1]);
-      } else {
-        canvas.Select(traffic_look.basic_traffic_brushes[2]);
-      }
+        if(colorful_traffic)
+        {
+          canvas.Select(traffic_look.colorful_traffic_brushes[indicators.get_rel_alt_indicator()][indicators.get_climb_indicator()]);
+        }
+        else {
+          canvas.Select(traffic_look.basic_traffic_brushes[indicators.get_rel_alt_indicator()]);
+        }
       break;
     }
 

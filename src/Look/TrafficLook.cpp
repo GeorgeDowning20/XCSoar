@@ -13,10 +13,16 @@ constexpr Color TrafficLook::team_color_yellow;
 void
 TrafficLook::Initialise(const Font &_font)
 {
-  for (unsigned i = 0; i < num_alt_based_colour_options; i++)
-    {
-      basic_traffic_brushes[i].Create(basic_traffic_colors[i]); // 2x3 array of brushes
+  for (unsigned i = 0; i < num_alt_based_colour_options; i++) {
+    for (unsigned j = 0; j < num_vario_based_colour_options; j++) {
+      colorful_traffic_brushes[i][j].Create(colorful_traffic_colors[i][j]); // 3x3 array of brushes
     }
+  }
+
+  for (unsigned i = 0; i < num_alt_based_colour_options; i++)
+  {
+    basic_traffic_brushes[i].Create(basic_traffic_colors[i]); // 2x3 array of brushes
+  }
 
   warning_brush.Create(warning_color);
   alarm_brush.Create(alarm_color);
