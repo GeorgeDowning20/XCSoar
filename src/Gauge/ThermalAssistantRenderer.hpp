@@ -46,6 +46,7 @@ protected:
   Angle direction;
   CirclingInfo circling;
   VarioInfo vario;
+  LiftDatabase filterd_lift_database;
 
 public:
   ThermalAssistantRenderer(const ThermalAssistantLook &look,

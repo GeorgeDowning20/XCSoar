@@ -49,6 +49,16 @@ ThermalAssistantRenderer::Update(const AttitudeState &attitude,
   vario = (VarioInfo)derived;
 }
 
+void 
+ThermalAssistantRenderer::FilterLiftDatabase(LiftPoints &lift_points)
+{
+  for (unsigned i = 0; i < vario.lift_database.size(); i++) {
+    filterd_lift_database[i] = 0.5 * vario.lift_database[i]
+                             + 0.25 * vario.lift_database[(i + 1) % lift_points.size()]
+                             + 0.25 * vario.lift_database[(i + lift_points.size() - 1) % lift_points.size()];
+  }
+}
+
 double
 ThermalAssistantRenderer::CalculateMaxLift() const
 {
