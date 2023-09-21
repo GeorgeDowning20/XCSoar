@@ -88,26 +88,6 @@ ThermalAssistantRenderer::NormalizeLift(double lift, double max_lift)
   return std::clamp(lift, 0., 1.);
 }
 
-void
-ThermalAssistantRenderer::PaintRadarPlane(Canvas &canvas) const
-{
-  canvas.Select(look.plane_pen);
-
-  PixelPoint p = mid.At(circling.TurningLeft() ? (int)radius : (int)-radius,
-                        0);
-
-  canvas.DrawLine(p.At(+Layout::FastScale(small ? 5 : 10),
-                       -Layout::FastScale(small ? 1 : 2)),
-                  p.At(-Layout::FastScale(small ? 5 : 10),
-                       -Layout::FastScale(small ? 1 : 2)));
-  canvas.DrawLine(p.At(0, -Layout::FastScale(small ? 3 : 6)),
-                  p.At(0, +Layout::FastScale(small ? 3 : 6)));
-  canvas.DrawLine(p.At(+Layout::FastScale(small ? 2 : 4),
-                       +Layout::FastScale(small ? 2 : 4)),
-                  p.At(-Layout::FastScale(small ? 2 : 4),
-                       +Layout::FastScale(small ? 2 : 4)));
-}
-
 static void
 DrawCircleLabel(Canvas &canvas, PixelPoint p,
                 tstring_view text) noexcept
@@ -125,6 +105,36 @@ DrawCircleLabelVSpeed(Canvas &canvas, PixelPoint p, double value) noexcept
   TCHAR buffer[10];
   FormatUserVerticalSpeed(value, buffer, ARRAY_SIZE(buffer));
   DrawCircleLabel(canvas, p, buffer);
+}
+
+void
+ThermalAssistantRenderer::PaintRadarPlane(Canvas &canvas, double max_lift) const
+{
+  int normalised_average = NormalizeLift(vario.average, max_lift) * radius;
+
+  canvas.Select(look.plane_pen);
+
+  PixelPoint p = mid.At(circling.TurningLeft() ? (int)normalised_average : (int)-normalised_average,
+                        0);
+
+  canvas.DrawLine(p.At(+Layout::FastScale(small ? 5 : 10),
+                       -Layout::FastScale(small ? 1 : 2)),
+                  p.At(-Layout::FastScale(small ? 5 : 10),
+                       -Layout::FastScale(small ? 1 : 2)));
+  canvas.DrawLine(p.At(0, -Layout::FastScale(small ? 3 : 6)),
+                  p.At(0, +Layout::FastScale(small ? 3 : 6)));
+  canvas.DrawLine(p.At(+Layout::FastScale(small ? 2 : 4),
+                       +Layout::FastScale(small ? 2 : 4)),
+                  p.At(-Layout::FastScale(small ? 2 : 4),
+                       +Layout::FastScale(small ? 2 : 4)));
+
+  if (small)
+    return;
+
+  if (!circling.TurningLeft()) 
+    DrawCircleLabelVSpeed(canvas, p + PixelSize{-45, 0}, vario.average);
+  else 
+    DrawCircleLabelVSpeed(canvas, p + PixelSize{+45, 0}, vario.average);
 }
 
 void
@@ -209,5 +219,5 @@ ThermalAssistantRenderer::Paint(Canvas &canvas)
   PaintPoints(canvas, lift_points);
   PaintAdvisor(canvas, lift_points);
 
-  PaintRadarPlane(canvas);
+  PaintRadarPlane(canvas,max_lift);
 }
