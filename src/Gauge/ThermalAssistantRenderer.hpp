@@ -47,6 +47,7 @@ protected:
   CirclingInfo circling;
   VarioInfo vario;
   LiftDatabase filterd_lift_database;
+  double current_risk_mc;
 
 public:
   ThermalAssistantRenderer(const ThermalAssistantLook &look,
@@ -86,4 +87,6 @@ protected:
   void PaintPoints(Canvas &canvas, const LiftPoints &lift_points) const;
   void PaintAdvisor(Canvas &canvas, const LiftPoints &lift_points) const;
   void PaintNotCircling(Canvas &canvas) const;
+  void FilterLiftDatabase(LiftPoints &lift_points);
+  void PaintMcCircle(Canvas &canvas, double max_lift) const;
 };

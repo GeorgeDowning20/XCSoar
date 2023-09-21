@@ -21,6 +21,8 @@ struct ThermalAssistantLook {
   Pen inner_circle_pen;
   Pen outer_circle_pen;
 
+  Pen climbing_well_circle_pen, climbing_slowly_circle_pen, sinking_circle_pen;
+
   Font circle_label_font, overlay_font;
 
   void Initialise(bool small, bool inverse);

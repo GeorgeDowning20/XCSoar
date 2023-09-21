@@ -24,6 +24,10 @@ ThermalAssistantLook::Initialise(bool small, bool inverse)
   outer_circle_pen.Create(Pen::DASH2, 1, circle_color);
   plane_pen.Create(width, inverse ? COLOR_WHITE : COLOR_BLACK);
 
+  climbing_well_circle_pen.Create(width, COLOR_GREEN);
+  climbing_slowly_circle_pen.Create(width, COLOR_BLACK);
+  sinking_circle_pen.Create(width, COLOR_RED);
+
   overlay_font.Load(FontDescription(Layout::FontScale(22)));
   circle_label_font.Load(FontDescription(Layout::FontScale(10)));
 }

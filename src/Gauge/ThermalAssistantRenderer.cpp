@@ -47,6 +47,7 @@ ThermalAssistantRenderer::Update(const AttitudeState &attitude,
   direction = attitude.heading;
   circling = (CirclingInfo)derived;
   vario = (VarioInfo)derived;
+  current_risk_mc = derived.common_stats.current_risk_mc;
 }
 
 void 
@@ -145,6 +146,28 @@ ThermalAssistantRenderer::PaintRadarPlane(Canvas &canvas, double max_lift) const
     DrawCircleLabelVSpeed(canvas, p + PixelSize{-45, 0}, vario.average);
   else 
     DrawCircleLabelVSpeed(canvas, p + PixelSize{+45, 0}, vario.average);
+}
+
+void
+ThermalAssistantRenderer::PaintMcCircle(Canvas &canvas, double max_lift) const
+{
+  unsigned int normalised_mc = NormalizeLift(vario.average, max_lift) * radius;
+
+  canvas.SelectHollowBrush();
+
+  if(vario.average > current_risk_mc)
+    canvas.Select(look.climbing_well_circle_pen);
+  else if(vario.average > 0)
+    canvas.Select(look.climbing_slowly_circle_pen);
+  else
+    canvas.Select(look.sinking_circle_pen);
+
+  canvas.DrawCircle(mid, normalised_mc);
+
+  if(small)
+    return;
+
+  DrawCircleLabelVSpeed(canvas, mid + PixelSize{0u, -normalised_mc+2}, current_risk_mc);
 }
 
 void
