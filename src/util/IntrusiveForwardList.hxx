@@ -185,7 +185,7 @@ public:
 
 	void clear() noexcept {
 		head = {};
-		last_cache = {};
+		last_cache = {&head};
 		counter.reset();
 	}
 
@@ -196,7 +196,31 @@ public:
 			disposer(item);
 		}
 
-		last_cache = {};
+		last_cache = {&head};
+	}
+
+	/**
+	 * @return the number of removed items
+	 */
+	std::size_t remove_and_dispose_if(std::predicate<const_reference> auto pred,
+					  Disposer<value_type> auto dispose) noexcept {
+		std::size_t result = 0;
+
+		for (auto prev = before_begin(), current = std::next(prev);
+		     current != end();) {
+			auto &item = *current;
+
+			if (pred(item)) {
+				++result;
+				++current;
+				erase_after(prev);
+				dispose(&item);
+			} else {
+				prev = current++;
+			}
+		}
+
+		return result;
 	}
 
 	const_reference front() const noexcept {
@@ -368,7 +392,7 @@ public:
 		return {&ToNode(t)};
 	}
 
-	void push_front(reference t) noexcept {
+	iterator push_front(reference t) noexcept {
 		auto &new_node = ToNode(t);
 
 		if constexpr (options.cache_last)
@@ -378,9 +402,11 @@ public:
 		new_node.next = head.next;
 		head.next = &new_node;
 		++counter;
+
+		return iterator_to(t);
 	}
 
-	void push_back(reference t) noexcept
+	iterator push_back(reference t) noexcept
 		requires(options.cache_last) {
 		auto &new_node = ToNode(t);
 		new_node.next = nullptr;
@@ -388,6 +414,8 @@ public:
 		last_cache.value = &new_node;
 
 		++counter;
+
+		return iterator_to(t);
 	}
 
 	static iterator insert_after(iterator pos, reference t) noexcept

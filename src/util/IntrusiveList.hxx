@@ -35,9 +35,13 @@ struct IntrusiveListNode {
 	}
 };
 
-template<IntrusiveHookMode _mode=IntrusiveHookMode::NORMAL>
+/**
+ * @param Tag an arbitrary tag type to allow using multiple base hooks
+ */
+template<IntrusiveHookMode _mode=IntrusiveHookMode::NORMAL,
+	 typename Tag=void>
 class IntrusiveListHook {
-	template<typename T> friend struct IntrusiveListBaseHookTraits;
+	template<typename, typename> friend struct IntrusiveListBaseHookTraits;
 	template<auto member> friend struct IntrusiveListMemberHookTraits;
 	template<typename T, typename HookTraits, IntrusiveListOptions> friend class IntrusiveList;
 
@@ -68,9 +72,8 @@ public:
 			siblings.next = nullptr;
 	}
 
-	bool is_linked() const noexcept {
-		static_assert(mode >= IntrusiveHookMode::TRACK);
-
+	bool is_linked() const noexcept
+		requires(mode >= IntrusiveHookMode::TRACK) {
 		return siblings.next != nullptr;
 	}
 
@@ -91,12 +94,14 @@ using AutoUnlinkIntrusiveListHook =
 
 /**
  * For classes which embed #IntrusiveListHook as base class.
+ *
+ * @param Tag selector for which #IntrusiveHashSetHook to use
  */
-template<typename T>
+template<typename T, typename Tag=void>
 struct IntrusiveListBaseHookTraits {
 	/* a never-called helper function which is used by _Cast() */
 	template<IntrusiveHookMode mode>
-	static constexpr IntrusiveListHook<mode> _Identity(const IntrusiveListHook<mode> &) noexcept;
+	static constexpr IntrusiveListHook<mode, Tag> _Identity(const IntrusiveListHook<mode, Tag> &) noexcept;
 
 	/* another never-called helper function which "calls"
 	   _Identity(), implicitly casting the item to the
@@ -412,6 +417,16 @@ public:
 		return {&ToNode(t)};
 	}
 
+	using reverse_iterator = std::reverse_iterator<iterator>;
+
+	constexpr reverse_iterator rbegin() noexcept {
+		return reverse_iterator{end()};
+	}
+
+	constexpr reverse_iterator rend() noexcept {
+		return reverse_iterator{begin()};
+	}
+
 	class const_iterator final {
 		friend IntrusiveList;
 
@@ -485,6 +500,16 @@ public:
 
 	static constexpr const_iterator iterator_to(const_reference t) noexcept {
 		return {&ToNode(t)};
+	}
+
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+	constexpr const_reverse_iterator rbegin() const noexcept {
+		return reverse_iterator{end()};
+	}
+
+	constexpr const_reverse_iterator rend() const noexcept {
+		return reverse_iterator{begin()};
 	}
 
 	/**

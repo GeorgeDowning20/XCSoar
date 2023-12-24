@@ -1,7 +1,21 @@
-Version 7.40 - not yet released
+Version 7.42 - not yet released
+
+Version 7.41 - 2023/12/21
+* data files
+  - fix crash with empty user.cup
+* Android
+  - fix BLE/HM10 data corruption
+  - fix crash if IOIO connect was canceled quickly
+  - fix crash if not allowed to start service in foreground
+* Kobo
+  - fix Wifi setup (7.40 breakage)
+  - hide all pseudo tty ports
+
+Version 7.40 - 2023/11/02
 * user interface
   - Added infobox that combines ETA with AAT dT
   - hide mouse cursor after 10 seconds of inactivity
+  - Move glider icon on thermal assist according to 30s average.
 * Linux
   - fix the /etc/xcsoar data directory
 * Android
