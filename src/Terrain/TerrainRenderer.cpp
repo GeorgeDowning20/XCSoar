@@ -8,22 +8,24 @@
 #include "util/Macros.hpp"
 
 #include <cassert>
+static constexpr double REDUCE_FRACTION = 0.18;
+static constexpr double ElevationOffset = 50;
 
 static constexpr ColorRamp terrain_colors[][NUM_COLOR_RAMP_LEVELS] = {
   {
-    {0, { 0x70, 0xc0, 0xa7 }},
-    {250, { 0xca, 0xe7, 0xb9 }},
-    {500, { 0xf4, 0xea, 0xaf }},
-    {750, { 0xdc, 0xb2, 0x82 }},
-    {1000, { 0xca, 0x8e, 0x72 }},
-    {1250, { 0xde, 0xc8, 0xbd }},
-    {1500, { 0xe3, 0xe4, 0xe9 }},
-    {1750, { 0xdb, 0xd9, 0xef }},
-    {2000, { 0xce, 0xcd, 0xf5 }},
-    {2250, { 0xc2, 0xc1, 0xfa }},
-    {2500, { 0xb7, 0xb9, 0xff }},
-    {5000, { 0xb7, 0xb9, 0xff }},
-    {6000, { 0xb7, 0xb9, 0xff }}
+    {(short int)(0*REDUCE_FRACTION), { 0x70, 0xc0, 0xa7 }},
+    {(short int)((250*REDUCE_FRACTION) + ElevationOffset), { 0xca, 0xe7, 0xb9 }},
+    {(short int)((500*REDUCE_FRACTION) + ElevationOffset), { 0xf4, 0xea, 0xaf }},
+    {(short int)((750*REDUCE_FRACTION) + ElevationOffset), { 0xdc, 0xb2, 0x82 }},
+    {(short int)((1000*REDUCE_FRACTION) + ElevationOffset), { 0xca, 0x8e, 0x72 }},
+    {(short int)((1250*REDUCE_FRACTION) + ElevationOffset), { 0xde, 0xc8, 0xbd }},
+    {(short int)((1500*REDUCE_FRACTION) + ElevationOffset), { 0xe3, 0xe4, 0xe9 }},
+    {(short int)((1750*REDUCE_FRACTION) + ElevationOffset), { 0xdb, 0xd9, 0xef }},
+    {(short int)((2000*REDUCE_FRACTION) + ElevationOffset), { 0xce, 0xcd, 0xf5 }},
+    {(short int)((2250*REDUCE_FRACTION) + ElevationOffset), { 0xc2, 0xc1, 0xfa }},
+    {(short int)((2500*REDUCE_FRACTION) + ElevationOffset), { 0xb7, 0xb9, 0xff }},
+    {(short int)((5000*REDUCE_FRACTION) + ElevationOffset), { 0xb7, 0xb9, 0xff }},
+    {(short int)((6000*REDUCE_FRACTION) + ElevationOffset), { 0xb7, 0xb9, 0xff }}
   },
   {
     {0, { 0x70, 0xc0, 0xa7 }},
