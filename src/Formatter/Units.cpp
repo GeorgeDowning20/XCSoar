@@ -229,13 +229,13 @@ const TCHAR*
 GetPressureFormat(Unit unit, bool include_unit)
 {
   if (include_unit)
-    return unit == Unit::INCH_MERCURY ? _T("%.2f %s") : _T("%.f %s");
+    return unit == Unit::INCH_MERCURY ? _T("%.2f %s") : _T("%.1f %s");
   else
-    return unit == Unit::INCH_MERCURY ? _T("%.2f") : _T("%.f");
+    return unit == Unit::INCH_MERCURY ? _T("%.2f") : _T("%.1f");
 }
 
 double
 GetPressureStep(Unit unit)
 {
-  return unit == Unit::INCH_MERCURY ? 0.01 : 1.;
+  return unit == Unit::INCH_MERCURY ? 0.01 : 0.1;
 }
