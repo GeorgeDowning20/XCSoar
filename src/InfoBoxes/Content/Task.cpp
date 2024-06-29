@@ -325,6 +325,7 @@ UpdateInfoBoxNextAltitudeArrival(InfoBoxData &data) noexcept
   }
 
   data.SetValueFromAltitude(next_solution.GetArrivalAltitude(basic.nav_altitude));
+  data.SetCommentFromAlternateAltitude(next_solution.GetArrivalAltitude(basic.nav_altitude));
 }
 
 
