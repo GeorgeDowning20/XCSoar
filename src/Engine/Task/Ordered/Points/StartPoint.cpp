@@ -6,6 +6,7 @@
 #include "Task/ObservationZones/Boundary.hpp"
 #include "Task/TaskBehaviour.hpp"
 #include "Geo/Math.hpp"
+#include "Geo/GeoVector.hpp"
 
 #include <cassert>
 
@@ -48,32 +49,104 @@ StartPoint::SetNeighbours(OrderedTaskPoint *_prev, OrderedTaskPoint *_next) noex
   OrderedTaskPoint::SetNeighbours(_prev, _next);
 }
 
+bool FindIntersection(const GeoPoint &p1, const GeoPoint &p2,
+                      const GeoPoint &p3, const GeoPoint &p4,
+                      GeoPoint &intersection);
+
+GeoPoint CalculateHeadingEndPoint(const GeoPoint &start, const Angle &heading, double distance);
+
+bool IsPointOnLineSegment(const GeoPoint &p, const GeoPoint &p1, const GeoPoint &p2);
+
+// Function Definitions
+bool FindIntersection(const GeoPoint &p1, const GeoPoint &p2,
+                      const GeoPoint &p3, const GeoPoint &p4,
+                      GeoPoint &intersection) {
+  // Line p1-p2 represented as a1x + b1y = c1
+  double a1 = p2.latitude.Native() - p1.latitude.Native();
+  double b1 = p1.longitude.Native() - p2.longitude.Native();
+  double c1 = a1 * p1.longitude.Native() + b1 * p1.latitude.Native();
+
+  // Line p3-p4 represented as a2x + b2y = c2
+  double a2 = p4.latitude.Native() - p3.latitude.Native();
+  double b2 = p3.longitude.Native() - p4.longitude.Native();
+  double c2 = a2 * p3.longitude.Native() + b2 * p3.latitude.Native();
+
+  double determinant = a1 * b2 - a2 * b1;
+
+  if (determinant == 0) {
+    // The lines are parallel
+    return false;
+  } else {
+    double x = (b2 * c1 - b1 * c2) / determinant;
+    double y = (a1 * c2 - a2 * c1) / determinant;
+    intersection = GeoPoint(Angle::Radians(x), Angle::Radians(y));
+    return true;
+  }
+}
+
+GeoPoint CalculateHeadingEndPoint(const GeoPoint &start, const Angle &heading, double distance) {
+  GeoVector vector(distance, heading);
+  return vector.EndPoint(start);
+}
+
+bool IsPointOnLineSegment(const GeoPoint &p, const GeoPoint &p1, const GeoPoint &p2) {
+  double min_lat = std::min(p1.latitude.Native(), p2.latitude.Native());
+  double max_lat = std::max(p1.latitude.Native(), p2.latitude.Native());
+  double min_lon = std::min(p1.longitude.Native(), p2.longitude.Native());
+  double max_lon = std::max(p1.longitude.Native(), p2.longitude.Native());
+
+  return (p.latitude.Native() >= min_lat && p.latitude.Native() <= max_lat &&
+          p.longitude.Native() >= min_lon && p.longitude.Native() <= max_lon);
+}
 
 void
 StartPoint::find_best_start(const AircraftState &state,
                             const OrderedTaskPoint &next,
                             const FlatProjection &projection)
 {
-  /* check which boundary point results in the smallest distance to
-     fly */
-
   const OZBoundary boundary = GetBoundary();
-  assert(!boundary.empty());
+  assert(boundary.begin() != boundary.end()); // Ensure boundary is not empty
 
-  const auto end = boundary.end();
-  auto i = boundary.begin();
-  assert(i != end);
+  auto boundary_it = boundary.begin();
+  const GeoPoint &start_point = *boundary_it++;   // GetSectorStart()
+  assert(boundary_it != boundary.end());          // Ensure there is a second point
+  const GeoPoint &end_point = *boundary_it;       // GetSectorEnd()
 
   const GeoPoint &next_location = next.GetLocationRemaining();
+  GeoPoint best_location;
+  double best_distance;
 
-  GeoPoint best_location = *i;
-  auto best_distance = ::DoubleDistance(state.location, *i, next_location);
+  // Check if the aircraft is in the start sector
+  if (IsInSector(state)) {
+    // Draw a line between the current position and the first turn point
+    GeoPoint intersection;
+    if (FindIntersection(state.location, next_location, start_point, end_point, intersection)) {
+      best_location = intersection;
+      best_distance = ::DoubleDistance(state.location, intersection, next_location);
+    } else {
+      // If no intersection found, fall back to minimum distance method
+      best_location = *boundary.begin();
+      best_distance = ::DoubleDistance(state.location, *boundary.begin(), next_location);
 
-  for (++i; i != end; ++i) {
-    auto distance = ::DoubleDistance(state.location, *i, next_location);
-    if (distance < best_distance) {
-      best_location = *i;
-      best_distance = distance;
+      for (auto it = boundary.begin(); it != boundary.end(); ++it) {
+        auto distance = ::DoubleDistance(state.location, *it, next_location);
+        if (distance < best_distance) {
+          best_location = *it;
+          best_distance = distance;
+        }
+      }
+    }
+  } else {
+    // If not in the start sector, fall back to minimum distance method
+    best_location = *boundary.begin();
+    best_distance = ::DoubleDistance(state.location, *boundary.begin(), next_location);
+
+    for (auto it = boundary.begin(); it != boundary.end(); ++it) {
+      auto distance = ::DoubleDistance(state.location, *it, next_location);
+      if (distance < best_distance) {
+        best_location = *it;
+        best_distance = distance;
+      }
     }
   }
 
