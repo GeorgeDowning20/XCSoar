@@ -61,6 +61,12 @@ InfoBoxData::SetCommentFromPercent(double dd) noexcept
   FmtComment(_T("{} %"), (int)(dd));
 }
 
+void 
+InfoBoxData::SetCommentFromGR(double gr) noexcept
+{
+  FmtComment(_T("{:2.1f}"), gr);
+}
+
 void
 InfoBoxData::SetValueFromVoltage(double dd) noexcept
 {

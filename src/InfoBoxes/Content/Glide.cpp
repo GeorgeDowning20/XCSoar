@@ -25,9 +25,13 @@ UpdateInfoBoxGRInstant(InfoBoxData &data) noexcept
 void
 UpdateInfoBoxGRCruise(InfoBoxData &data) noexcept
 {
-  const auto &basic = CommonInterface::Basic();
+  // const auto &basic = CommonInterface::Basic();
+  const TaskStats &task_stats = CommonInterface::Calculated().task_stats;
   const auto &calculated = CommonInterface::Calculated();
   const auto cruise_gr = calculated.cruise_gr;
+
+  auto gradient = task_stats.total.gradient;
+  const auto average_gr = CommonInterface::Calculated().average_gr;
 
   if (!::GradientValid(cruise_gr)) {
     data.SetInvalid();
@@ -37,10 +41,20 @@ UpdateInfoBoxGRCruise(InfoBoxData &data) noexcept
   // Set Value
   data.SetValueFromGlideRatio(cruise_gr);
 
-  if (basic.location_available)
-    data.SetCommentFromDistance(basic.location.DistanceS(calculated.cruise_start_location));
-  else
-    data.SetCommentInvalid();
+    // comment:
+    if (gradient <= 0) {
+      data.SetComment(_T("+++"));
+      return;
+    }
+
+     if (::GradientValid(gradient))
+      data.SetCommentFromGR(gradient);
+    else
+      data.SetCommentInvalid();
+
+    //  if cruise > required make the intire info box greed
+      data.SetValueColor((cruise_gr > gradient) ? 3 : 0);
+      data.SetCommentColor((average_gr > gradient) ? 3 : 0);
 }
 
 void

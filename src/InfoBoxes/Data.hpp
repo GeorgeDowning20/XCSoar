@@ -137,6 +137,8 @@ struct InfoBoxData {
    */
   void SetValueFromGlideRatio(double gr) noexcept;
 
+  void SetCommentFromGlideRatio(double gr) noexcept;
+
   /**
    * Set the InfoBox value to the specified distance.
    */
@@ -239,6 +241,8 @@ struct InfoBoxData {
    * Set the InfoBox comment to the specified percentage value.
    */
   void SetCommentFromPercent(double value) noexcept;
+
+  void SetCommentFromGR(double value) noexcept;
 
   /**
    * Sets the unit of the InfoBox value
