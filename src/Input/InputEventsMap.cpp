@@ -172,6 +172,10 @@ InputEvents::sub_AutoZoom(int vswitch)
   ActionInterface::SendMapSettings(true);
 }
 
+
+
+
+
 void
 InputEvents::sub_SetZoom(double value)
 {
