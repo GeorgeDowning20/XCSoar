@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1620"
-   version = "2.3">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
@@ -25,7 +25,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "5CBFD0922D742E1000F05795"
-               BuildableName = "XCSoar"
+               BuildableName = "XCSoar.app"
                BlueprintName = "XCSoar"
                ReferencedContainer = "container:XCSoar.xcodeproj">
             </BuildableReference>
@@ -49,11 +49,16 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <PathRunnable
-         runnableDebuggingMode = "0"
-         Location = "workspace"
-         FilePath = "XCSoarExecutable">
-      </PathRunnable>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "5CBFD0922D742E1000F05795"
+            BuildableName = "XCSoar.app"
+            BlueprintName = "XCSoar"
+            ReferencedContainer = "container:XCSoar.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -61,20 +66,16 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <PathRunnable
-         runnableDebuggingMode = "0"
-         Location = "workspace"
-         FilePath = "XCSoarExecutable">
-      </PathRunnable>
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "5CBFD0922D742E1000F05795"
-            BuildableName = "XCSoar"
+            BuildableName = "XCSoar.app"
             BlueprintName = "XCSoar"
             ReferencedContainer = "container:XCSoar.xcodeproj">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

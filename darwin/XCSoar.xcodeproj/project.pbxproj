@@ -7038,6 +7038,7 @@
 		5CBFEF2B2D742FA600F05795 /* xci2po.pl */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = xci2po.pl; sourceTree = "<group>"; };
 		5CBFEF2C2D742FA600F05795 /* xcs2cpp.pl */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = xcs2cpp.pl; sourceTree = "<group>"; };
 		5CBFEF2E2D742FA600F05795 /* VERSION.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = VERSION.txt; path = ../VERSION.txt; sourceTree = SOURCE_ROOT; };
+		5CBFEF2F2D742FA600F05796 /* XCSoar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XCSoar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -7077,6 +7078,7 @@
 				5CBFEF112D742FA600F05795 /* test */,
 				5CBFEF2D2D742FA600F05795 /* tools */,
 				5CBFEF2E2D742FA600F05795 /* VERSION.txt */,
+				5CBFD0A52D742F1000F05795 /* Products */,
 				5CBFD09D2D742E8F00F05795 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -7084,6 +7086,14 @@
 		5CBFD09D2D742E8F00F05795 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5CBFD0A52D742F1000F05795 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5CBFEF2F2D742FA600F05796 /* XCSoar.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -20423,24 +20433,24 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXLegacyTarget section */
+/* Begin PBXNativeTarget section */
 		5CBFD0922D742E1000F05795 /* XCSoar */ = {
-			isa = PBXLegacyTarget;
-			buildArgumentsString = "$(PLATFORM_NAME) $(CONFIGURATION) $(ACTION)";
-			buildConfigurationList = 5CBFD0952D742E1000F05795 /* Build configuration list for PBXLegacyTarget "XCSoar" */;
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5CBFD0952D742E1000F05795 /* Build configuration list for PBXNativeTarget "XCSoar" */;
 			buildPhases = (
+				5CBFD0A32D742F1000F05795 /* Build XCSoar */,
+				5CBFD0A42D742F1000F05795 /* Fix Bundle and Sign */,
 			);
-			buildToolPath = $PROJECT_DIR/build.sh;
-			buildWorkingDirectory = $PROJECT_DIR/..;
+			buildRules = (
+			);
 			dependencies = (
 			);
 			name = XCSoar;
-			packageProductDependencies = (
-			);
-			passBuildSettingsInEnvironment = 0;
 			productName = XCSoar;
+			productReference = 5CBFEF2F2D742FA600F05796 /* XCSoar.app */;
+			productType = "com.apple.product-type.application";
 		};
-/* End PBXLegacyTarget section */
+/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		5CBFD08E2D742E1000F05795 /* Project object */ = {
@@ -20464,7 +20474,7 @@
 			mainGroup = 5CBFD08D2D742E1000F05795;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 5CBFD09D2D742E8F00F05795 /* Products */;
+			productRefGroup = 5CBFD0A52D742F1000F05795 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -20473,25 +20483,91 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		5CBFD0A32D742F1000F05795 /* Build XCSoar */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build XCSoar";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\n\n# This script builds XCSoar and creates the app bundle\necho \"Building XCSoar for iOS...\"\n\n# Navigate to project root\ncd \"$PROJECT_DIR/..\"\n\n# Set up environment variables\nexport DEBUG=\"n\"\nif [ \"${CONFIGURATION}\" = \"Debug\" ]; then\n    export DEBUG=\"y\"\nfi\n\n# Determine target based on platform\ncase \"$PLATFORM_NAME\" in\n    iphonesimulator)\n        export TARGET=\"IOS64SIM\"\n        ;;\n    iphoneos)\n        export TARGET=\"IOS64\"\n        ;;\n    *)\n        echo \"Error: Unsupported platform: $PLATFORM_NAME\" >&2\n        exit 1\n        ;;\nesac\n\necho \"Building for target: $TARGET\"\n\n# Ensure homebrew gmake is in PATH\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\n# Get number of CPUs for parallel compilation\nNUM_CPUS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo \"4\")\n\necho \"Building with $NUM_CPUS parallel jobs...\"\n\n# Build the IPA\nif ! gmake -j\"${NUM_CPUS}\" USE_CCACHE=y V=2 OPTIMIZE=\"-O0\" DEBUG=\"$DEBUG\" TARGET=\"$TARGET\" ipa; then\n    echo \"Error: Build failed\" >&2\n    exit 1\nfi\n\n# Create the app bundle structure in BUILT_PRODUCTS_DIR\nAPP_BUNDLE=\"${BUILT_PRODUCTS_DIR}/XCSoar.app\"\nrm -rf \"$APP_BUNDLE\"\nmkdir -p \"$APP_BUNDLE\"\n\n# Extract the IPA content to the app bundle\nIPA_PATH=\"output/${TARGET}/xcsoar.ipa\"\nif [ -f \"$IPA_PATH\" ]; then\n    TEMP_DIR=$(mktemp -d)\n    unzip -q \"$IPA_PATH\" -d \"$TEMP_DIR\"\n    \n    # Find the .app directory in the extracted content\n    APP_DIR=$(find \"$TEMP_DIR/Payload\" -name \"*.app\" -type d | head -n 1)\n    \n    if [ -d \"$APP_DIR\" ]; then\n        # Copy the contents of the .app directory to our target\n        cp -R \"$APP_DIR/\"* \"$APP_BUNDLE/\"\n        echo \"Successfully created app bundle at $APP_BUNDLE\"\n    else\n        echo \"Error: Could not find .app directory in IPA\" >&2\n        exit 1\n    fi\n    \n    rm -rf \"$TEMP_DIR\"\nelse\n    echo \"Error: IPA not found at $IPA_PATH\" >&2\n    exit 1\nfi\n\necho \"Build completed successfully\"\n";
+		};
+		5CBFD0A42D742F1000F05795 /* Fix Bundle and Sign */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Fix Bundle and Sign";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\n\n# This script fixes the bundle identifier and signs the app for device installation\necho \"Post-processing XCSoar app bundle...\"\n\nAPP_BUNDLE=\"${BUILT_PRODUCTS_DIR}/XCSoar.app\"\n\n# Only run this for device builds, not simulator\nif [ \"$PLATFORM_NAME\" = \"iphoneos\" ]; then\n    echo \"Fixing bundle identifier and signing for device...\"\n    \n    # Fix the bundle identifier in Info.plist to match provisioning profile\n    if [ -f \"$APP_BUNDLE/Info.plist\" ]; then\n        echo \"Updating CFBundleIdentifier to org.xcsoar.XCSoar\"\n        plutil -replace CFBundleIdentifier -string \"org.xcsoar.XCSoar\" \"$APP_BUNDLE/Info.plist\"\n    else\n        echo \"Warning: Info.plist not found at $APP_BUNDLE/Info.plist\"\n    fi\n    \n    # Copy provisioning profile if available\n    PROVISIONING_PROFILE=\"$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/00e30083-c719-4d41-832c-556d7b005bc7.mobileprovision\"\n    if [ -f \"$PROVISIONING_PROFILE\" ]; then\n        echo \"Embedding provisioning profile\"\n        cp \"$PROVISIONING_PROFILE\" \"$APP_BUNDLE/embedded.mobileprovision\"\n    else\n        echo \"Warning: Provisioning profile not found at $PROVISIONING_PROFILE\"\n    fi\n    \n    # Re-sign the app bundle\n    ENTITLEMENTS_FILE=\"$PROJECT_DIR/XCSoar-Debug.entitlements\"\n    if [ -f \"$ENTITLEMENTS_FILE\" ] && [ \"$CODE_SIGN_IDENTITY\" != \"\" ]; then\n        echo \"Re-signing app bundle with identity: $EXPANDED_CODE_SIGN_IDENTITY_NAME\"\n        codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY_NAME\" \\\n            --entitlements \"$ENTITLEMENTS_FILE\" \\\n            --timestamp=none \\\n            --generate-entitlement-der \\\n            \"$APP_BUNDLE\"\n        echo \"App bundle signed successfully\"\n    else\n        echo \"Warning: Skipping code signing - entitlements file or signing identity not found\"\n    fi\nelse\n    echo \"Simulator build - skipping signing steps\"\nfi\n\necho \"Post-processing completed\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin XCBuildConfiguration section */
 		5CBFD0932D742E1000F05795 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 			};
 			name = Debug;
 		};
 		5CBFD0942D742E1000F05795 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 			};
 			name = Release;
 		};
 		5CBFD0962D742E1000F05795 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = F3H4F59G8R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = XCSoar;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Navigation and flight logging require access to your location even when the app is in the background.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Navigation and flight logging with the in-built GPS sensor.";
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xcsoar.XCSoar;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -20499,7 +20575,34 @@
 		5CBFD0972D742E1000F05795 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = F3H4F59G8R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = XCSoar;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Navigation and flight logging require access to your location even when the app is in the background.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Navigation and flight logging with the in-built GPS sensor.";
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xcsoar.XCSoar;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -20516,7 +20619,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		5CBFD0952D742E1000F05795 /* Build configuration list for PBXLegacyTarget "XCSoar" */ = {
+		5CBFD0952D742E1000F05795 /* Build configuration list for PBXNativeTarget "XCSoar" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5CBFD0962D742E1000F05795 /* Debug */,
