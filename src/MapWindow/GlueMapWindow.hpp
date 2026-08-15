@@ -19,6 +19,7 @@
 #endif
 
 #include <array>
+#include <optional>
 
 struct Look;
 struct GestureLook;
@@ -334,7 +335,8 @@ public:
   void PanTo(const GeoPoint &location) noexcept;
 
   bool ShowMapItems(const GeoPoint &location, bool show_empty_message = true,
-                    bool pointer_in_use = true) const noexcept;
+                    bool pointer_in_use = true,
+                    std::optional<PixelPoint> pointer = {}) const noexcept;
 
 protected:
   /* virtual methods from class MapWindow */

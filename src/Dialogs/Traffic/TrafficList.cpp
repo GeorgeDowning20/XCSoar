@@ -462,28 +462,11 @@ TrafficListWidget::OnPaintItem(Canvas &canvas, PixelRect rc,
   else
     tmp.Format("%s", tmp_id);
 
-  if (item.color != FlarmColor::NONE) {
+  if (item.color != FlarmColor::NONE &&
+      item.color != FlarmColor::COUNT) {
     const TrafficLook &traffic_look = UIGlobals::GetLook().traffic;
 
-    switch (item.color) {
-    case FlarmColor::NONE:
-    case FlarmColor::COUNT:
-      gcc_unreachable();
-
-    case FlarmColor::GREEN:
-      canvas.Select(traffic_look.team_pen_green);
-      break;
-    case FlarmColor::BLUE:
-      canvas.Select(traffic_look.team_pen_blue);
-      break;
-    case FlarmColor::YELLOW:
-      canvas.Select(traffic_look.team_pen_yellow);
-      break;
-    case FlarmColor::MAGENTA:
-      canvas.Select(traffic_look.team_pen_magenta);
-      break;
-    }
-
+    canvas.Select(traffic_look.GetTeamPen(item.color));
     canvas.SelectHollowBrush();
 
     const PixelSize size = canvas.CalcTextSize(tmp);

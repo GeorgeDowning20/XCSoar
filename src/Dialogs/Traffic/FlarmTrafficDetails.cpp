@@ -104,21 +104,12 @@ FlarmTrafficDetailsWidget::CreateButtons(WidgetDialog &buttons)
 {
   const ButtonLook &button_look = buttons.GetButtonLook();
 
-  buttons.AddButton(std::make_unique<ColorButtonRenderer>(button_look,
-                                                          TrafficLook::team_color_green),
-                    [this](){ OnFriendColorClicked(FlarmColor::GREEN); });
-
-  buttons.AddButton(std::make_unique<ColorButtonRenderer>(button_look,
-                                                          TrafficLook::team_color_blue),
-                    [this](){ OnFriendColorClicked(FlarmColor::BLUE); });
-
-  buttons.AddButton(std::make_unique<ColorButtonRenderer>(button_look,
-                                                          TrafficLook::team_color_yellow),
-                    [this](){ OnFriendColorClicked(FlarmColor::YELLOW); });
-
-  buttons.AddButton(std::make_unique<ColorButtonRenderer>(button_look,
-                                                          TrafficLook::team_color_magenta),
-                    [this](){ OnFriendColorClicked(FlarmColor::MAGENTA); });
+  for (unsigned i = 1; i < (unsigned)FlarmColor::COUNT; ++i) {
+    const FlarmColor color = (FlarmColor)i;
+    buttons.AddButton(std::make_unique<ColorButtonRenderer>(
+                        button_look, TrafficLook::GetTeamColor(color)),
+                      [this, color](){ OnFriendColorClicked(color); });
+  }
 
   buttons.AddButton(_("Clear"), [this](){ OnFriendColorClicked(FlarmColor::NONE); });
   buttons.AddButton(_("Team"), [this](){ OnTeamClicked(); });

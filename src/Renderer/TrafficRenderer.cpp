@@ -32,7 +32,6 @@ struct MapTrafficScale {
   unsigned circle_radius;
 };
 
-[[gnu::pure]]
 static MapTrafficScale
 MapTrafficScaleFromIconSize(unsigned icon_size) noexcept
 {
@@ -103,22 +102,10 @@ DrawFlarmArrow(Canvas &canvas, const TrafficLook &traffic_look,
     canvas.DrawPolygon(arrow, ARRAY_SIZE(arrow));
   }
 
-  switch (color) {
-  case FlarmColor::GREEN:
-    canvas.Select(traffic_look.team_pen_green);
-    break;
-  case FlarmColor::BLUE:
-    canvas.Select(traffic_look.team_pen_blue);
-    break;
-  case FlarmColor::YELLOW:
-    canvas.Select(traffic_look.team_pen_yellow);
-    break;
-  case FlarmColor::MAGENTA:
-    canvas.Select(traffic_look.team_pen_magenta);
-    break;
-  default:
+  if (color == FlarmColor::NONE)
     return;
-  }
+
+  canvas.Select(traffic_look.GetTeamPen(color));
 
   canvas.SelectHollowBrush();
   canvas.DrawCircle(pt, circle_radius);

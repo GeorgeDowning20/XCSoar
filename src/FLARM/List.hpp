@@ -18,12 +18,11 @@ struct TrafficList {
    * Typical maximum simultaneous PFLAA targets from one FLARM device.
    */
   static constexpr size_t DEVICE_MAX_COUNT = 25;
-  static constexpr size_t ONLINE_MAX_COUNT = 64;
+  static constexpr size_t ONLINE_MAX_COUNT = 125;
 
   /**
-   * Maximum traffic entries in this list.  Matches the largest online
-   * traffic batch the XCSoar Cloud server may send plus the local
-   * device FLARM traffic that may be merged into it.
+  * Maximum traffic entries in this list.  Supports up to 150 combined
+  * device and online traffic targets.
    */
   static constexpr size_t MAX_COUNT =
     DEVICE_MAX_COUNT + ONLINE_MAX_COUNT;

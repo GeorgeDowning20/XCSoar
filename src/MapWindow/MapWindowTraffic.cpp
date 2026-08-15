@@ -2,6 +2,7 @@
 // Copyright The XCSoar Project
 
 #include "MapWindow.hpp"
+#include "OffscreenTrafficMarker.hpp"
 #include "ui/canvas/Icon.hpp"
 #include "Screen/Layout.hpp"
 #include "Formatter/UserUnits.hpp"
@@ -13,7 +14,112 @@
 #include "MapSettings.hpp"
 #include "util/StringCompare.hxx"
 
+#include <algorithm>
 #include <cassert>
+
+#ifdef ENABLE_OPENGL
+#include "ui/canvas/opengl/Scope.hpp"
+#endif
+
+static constexpr size_t MAX_RENDERED_FLARM_TRAIL_SEGMENTS = 256;
+static constexpr Color FLARM_TRAIL_CLIMB_COLOR{0xff, 0x00, 0x00};
+static constexpr Color FLARM_TRAIL_UP_COLOR{0xff, 0xff, 0x00};
+static constexpr Color FLARM_TRAIL_SINK_COLOR{0x00, 0x00, 0xff};
+
+static void
+DrawFlarmTrail(Canvas &canvas, const WindowProjection &projection,
+               const std::deque<FlarmTrailPoint> &trail,
+               double set_mc,
+               double current_30s_vario, unsigned width) noexcept
+{
+  if (trail.size() < 2)
+    return;
+
+  const double reference_climb_rate = std::max(set_mc, current_30s_vario);
+  const auto get_color = [reference_climb_rate](double climb_rate) noexcept {
+    return climb_rate >= reference_climb_rate
+      ? FLARM_TRAIL_CLIMB_COLOR
+      : climb_rate > 0.
+        ? FLARM_TRAIL_UP_COLOR
+        : FLARM_TRAIL_SINK_COLOR;
+  };
+
+  const auto draw_segment = [&](size_t begin, size_t end) noexcept {
+    canvas.Select(Pen(Pen::Style::SOLID, Layout::ScalePenWidth(width),
+                      get_color(trail[end].climb_rate_avg30s)));
+    canvas.DrawLine(projection.GeoToScreen(trail[begin].location),
+                    projection.GeoToScreen(trail[end].location));
+  };
+
+  const size_t segment_count = trail.size() - 1;
+  const size_t step = std::max<size_t>(1,
+    (segment_count + MAX_RENDERED_FLARM_TRAIL_SEGMENTS - 1) /
+    MAX_RENDERED_FLARM_TRAIL_SEGMENTS);
+
+  size_t previous = 0;
+  for (size_t i = step; i < trail.size(); i += step) {
+    draw_segment(previous, i);
+    previous = i;
+  }
+
+  if (previous + 1 < trail.size())
+    draw_segment(previous, trail.size() - 1);
+}
+
+static void
+DrawOffscreenFlarmMarker(Canvas &canvas, PixelPoint position,
+                         const PixelRect &map_rect, const TrafficLook &look,
+                         bool fading, bool colorful_traffic,
+                         const FlarmTraffic &traffic, double set_mc,
+                         double current_30s_vario,
+                         DisplayOnlineTrafficMapMode online_mode,
+                         unsigned marker_scale_percent) noexcept
+{
+  const auto indicators = TrafficClimbAltIndicators::GetClimbAltIndicators(
+    traffic, set_mc, current_30s_vario);
+  const Color color = fading
+    ? ColorWithAlpha({0x99, 0x99, 0x99}, 0x80)
+    : colorful_traffic
+      ? look.GetColourfulTrafficColor(indicators)
+      : look.GetBasicTrafficColor(indicators);
+
+  canvas.Select(Pen(Pen::Style::SOLID, Layout::ScalePenWidth(1), color));
+  const unsigned radius = GetOffscreenTrafficMarkerRadius(marker_scale_percent);
+#ifdef ENABLE_OPENGL
+  const ScopeAlphaBlend alpha_blend;
+  canvas.Select(Brush(color));
+#elif defined(USE_MEMORY_CANVAS)
+  canvas.Select(Brush(color));
+#else
+  if (fading)
+    canvas.SelectHollowBrush();
+  else
+    canvas.Select(Brush(color));
+#endif
+  canvas.DrawCircle(position, radius);
+
+  const FlarmColor friend_color = FlarmFriends::GetFriendColor(traffic.id);
+
+  if (friend_color != FlarmColor::NONE) {
+    canvas.Select(look.GetTeamPen(friend_color));
+    canvas.SelectHollowBrush();
+    canvas.DrawCircle(position, radius + Layout::Scale(2) +
+                      Layout::ScalePenWidth(1));
+  }
+
+  const bool show_name = traffic.HasName() && !StringIsEmpty(traffic.name) &&
+    (!FlarmTraffic::IsInjectedSource(traffic.source) ||
+     online_mode == DisplayOnlineTrafficMapMode::SYMBOL_NAME);
+  if (show_name) {
+    TextInBoxMode mode;
+    if (!fading)
+      mode.shape = LabelShape::OUTLINED;
+    mode.align = TextInBoxMode::CENTER;
+    mode.vertical_position = TextInBoxMode::ABOVE;
+    mode.move_in_view = true;
+    TextInBox(canvas, traffic.name, position, mode, map_rect);
+  }
+}
 
 static void
 DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
@@ -103,6 +209,10 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
     GetMapSettings().online_traffic_map_mode;
   const unsigned scale_percent = (unsigned)GetMapSettings().traffic_icon_scale;
   const bool colorful_traffic = GetMapSettings().use_detailed_flarm_colours;
+  const bool trails_enabled = GetMapSettings().traffic_trail_enabled;
+  const unsigned trail_width = (unsigned)GetMapSettings().traffic_trail_width;
+  const unsigned marker_scale_percent =
+    (unsigned)GetMapSettings().traffic_offscreen_marker_size;
   const double set_mc = GetComputerSettings().polar.glide_polar_task.GetMC();
   const double current_30s_vario = Calculated().average;
 
@@ -114,6 +224,22 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
     if (FlarmTraffic::IsInjectedSource(traffic.source) &&
         online_mode == DisplayOnlineTrafficMapMode::OFF)
       continue;
+
+    if (trails_enabled)
+      if (const auto *trail = GetFlarmTrail(traffic.id))
+        DrawFlarmTrail(canvas, projection, *trail, set_mc,
+                       current_30s_vario, trail_width);
+
+    if (const auto marker =
+          GetOffscreenTrafficMarkerPosition(projection, traffic_visible_rect,
+                                            traffic.location,
+                                            marker_scale_percent)) {
+      DrawOffscreenFlarmMarker(canvas, *marker, traffic_visible_rect,
+                               traffic_look, false, colorful_traffic, traffic,
+                               set_mc, current_30s_vario, online_mode,
+                               marker_scale_percent);
+      continue;
+    }
 
     /* Historically, we skipped targets with both relative vectors
        zero to avoid drawing "no position" FLARM targets.  Absolute-
@@ -134,6 +260,22 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
       if (FlarmTraffic::IsInjectedSource(traffic.source) &&
           online_mode == DisplayOnlineTrafficMapMode::OFF)
         continue;
+
+      if (trails_enabled)
+        if (const auto *trail = GetFlarmTrail(traffic.id))
+          DrawFlarmTrail(canvas, projection, *trail, set_mc,
+                         current_30s_vario, trail_width);
+
+      if (const auto marker =
+        GetOffscreenTrafficMarkerPosition(projection, traffic_visible_rect,
+                                              traffic.location,
+                                              marker_scale_percent)) {
+        DrawOffscreenFlarmMarker(canvas, *marker, traffic_visible_rect,
+                                 traffic_look, true, colorful_traffic, traffic,
+                                 set_mc, current_30s_vario, online_mode,
+                                 marker_scale_percent);
+        continue;
+      }
 
       if (traffic.absolute_location ||
           traffic.relative_north != 0 || traffic.relative_east != 0)

@@ -39,12 +39,20 @@ Profile::Load(const ProfileMap &map, FlarmColorDatabase &db)
   LoadColor(map, db, "FriendsBlue", FlarmColor::BLUE);
   LoadColor(map, db, "FriendsYellow", FlarmColor::YELLOW);
   LoadColor(map, db, "FriendsMagenta", FlarmColor::MAGENTA);
+  LoadColor(map, db, "FriendsRed", FlarmColor::RED);
+  LoadColor(map, db, "FriendsCyan", FlarmColor::CYAN);
+  LoadColor(map, db, "FriendsOrange", FlarmColor::ORANGE);
+  LoadColor(map, db, "FriendsPurple", FlarmColor::PURPLE);
+  LoadColor(map, db, "FriendsLime", FlarmColor::LIME);
+  LoadColor(map, db, "FriendsTeal", FlarmColor::TEAL);
+  LoadColor(map, db, "FriendsPink", FlarmColor::PINK);
+  LoadColor(map, db, "FriendsWhite", FlarmColor::WHITE);
 }
 
 void
 Profile::Save(ProfileMap &map, const FlarmColorDatabase &db)
 {
-  std::string ids[4];
+  std::string ids[12];
 
   for (const auto &i : db) {
     assert(i.first.IsDefined());
@@ -64,4 +72,12 @@ Profile::Save(ProfileMap &map, const FlarmColorDatabase &db)
   map.Set("FriendsBlue", ids[1].c_str());
   map.Set("FriendsYellow", ids[2].c_str());
   map.Set("FriendsMagenta", ids[3].c_str());
+  map.Set("FriendsRed", ids[4].c_str());
+  map.Set("FriendsCyan", ids[5].c_str());
+  map.Set("FriendsOrange", ids[6].c_str());
+  map.Set("FriendsPurple", ids[7].c_str());
+  map.Set("FriendsLime", ids[8].c_str());
+  map.Set("FriendsTeal", ids[9].c_str());
+  map.Set("FriendsPink", ids[10].c_str());
+  map.Set("FriendsWhite", ids[11].c_str());
 }

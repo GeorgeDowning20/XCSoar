@@ -8,9 +8,23 @@
 #include "Blackboard/MapSettingsBlackboard.hpp"
 #include "FLARM/FadingTraffic.hpp"
 #include "thread/Debug.hpp"
+#include "time/Stamp.hpp"
 #include "UIState.hpp"
 
+#include <chrono>
+#include <deque>
 #include <map>
+
+struct FlarmTrailPoint {
+  GeoPoint location;
+  TimeStamp time;
+  double climb_rate_avg30s;
+};
+
+struct FlarmTrailReference {
+  FlarmId id;
+  TimeStamp time;
+};
 
 /**
  * Blackboard used by map window: provides read-only access to local
@@ -23,6 +37,9 @@ class MapWindowBlackboard:
   public MapSettingsBlackboard
 {
   UIState ui_state;
+
+  std::map<FlarmId, std::deque<FlarmTrailPoint>> flarm_trails;
+  std::deque<FlarmTrailReference> flarm_trail_fifo;
 
 protected:
   MapWindowBlackboard() noexcept {
@@ -52,6 +69,13 @@ protected:
   [[gnu::pure]]
   auto GetFadingFlarmTraffic() const noexcept {
     return FlarmFadingTraffic::GetAll();
+  }
+
+  [[gnu::pure]]
+  const std::deque<FlarmTrailPoint> *
+  GetFlarmTrail(FlarmId id) const noexcept {
+    const auto i = flarm_trails.find(id);
+    return i != flarm_trails.end() ? &i->second : nullptr;
   }
 
   [[gnu::const]]

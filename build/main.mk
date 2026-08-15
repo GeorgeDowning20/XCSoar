@@ -511,6 +511,7 @@ XCSOAR_SOURCES := \
 	$(SRC)/FLARM/TrafficDatabases.cpp \
 	$(SRC)/FLARM/MessagingDatabase.cpp \
 	$(SRC)/FLARM/MessagingFile.cpp \
+	$(SRC)/FLARM/TrafficClimbAltIndicators.cpp \
 	$(SRC)/UtilsSettings.cpp \
 	$(SRC)/UtilsSystem.cpp \
 	$(SRC)/Version.cpp \

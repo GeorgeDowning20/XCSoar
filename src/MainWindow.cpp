@@ -321,13 +321,17 @@ MainWindow::LayoutMapArea() noexcept
   if (HaveBottomWidget())
     bottom_widget->Move(bottom_rect);
 
-  PixelRect map_rect = GetMapRectAbove(main_rect, bottom_rect);
+  const PixelRect visible_map_rect = GetMapRectAbove(main_rect, bottom_rect);
+  PixelRect map_rect = visible_map_rect;
   #if defined(__APPLE__) && TARGET_OS_IPHONE
     /* On iOS, expand the map to use the full screen including notch/home indicator area */
     map_rect = static_cast<UI::TopWindow*>(this)->GetNativeScreenRect();
   #endif  
   
   map->Move(map_rect);
+  PixelRect traffic_visible_rect = visible_map_rect;
+  traffic_visible_rect.Offset(-map_rect.left, -map_rect.top);
+  map->SetTrafficVisibleRect(traffic_visible_rect);
   map->FullRedraw();
 }
 
@@ -531,6 +535,7 @@ MainWindow::InitialiseConfigured()
   map->SetMapSettings(CommonInterface::GetMapSettings());
   map->SetUIState(CommonInterface::GetUIState());
   map->Create(*this, map_rect);
+  map->SetTrafficVisibleRect(PixelRect{map_rect.GetSize()});
 
   popup = new PopupMessage(*this, look->dialog, ui_settings);
   popup->Create(map_rect);

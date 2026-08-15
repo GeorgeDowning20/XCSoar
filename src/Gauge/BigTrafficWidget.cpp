@@ -499,22 +499,7 @@ FlarmTrafficControl::PaintID(Canvas &canvas, PixelRect rc,
 
     // If team color found -> draw a colored circle in front of the name
     if (team_color != FlarmColor::NONE) {
-      switch (team_color) {
-      case FlarmColor::GREEN:
-        canvas.Select(look.team_brush_green);
-        break;
-      case FlarmColor::BLUE:
-        canvas.Select(look.team_brush_blue);
-        break;
-      case FlarmColor::YELLOW:
-        canvas.Select(look.team_brush_yellow);
-        break;
-      case FlarmColor::MAGENTA:
-        canvas.Select(look.team_brush_magenta);
-        break;
-      default:
-        break;
-      }
+      canvas.Select(look.GetTeamBrush(team_color));
 
       canvas.SelectNullPen();
       const unsigned radar_radius = radar_renderer.GetRadius();

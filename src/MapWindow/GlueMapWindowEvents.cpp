@@ -744,7 +744,7 @@ GlueMapWindow::OnMapItemTimer() noexcept
     return;
   }
 
-  ShowMapItems(drag_start_geopoint, false);
+  ShowMapItems(drag_start_geopoint, false, false, drag_start);
 }
 
 #ifdef ENABLE_OPENGL

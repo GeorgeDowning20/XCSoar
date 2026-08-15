@@ -112,6 +112,9 @@ protected:
    */
   MapWindowProjection render_projection;
 
+  /** The unobscured map area used for traffic visibility. */
+  PixelRect traffic_visible_rect{0, 0, 1, 1};
+
   Waypoints *waypoints = nullptr;
   TopographyStore *topography = nullptr;
   CachedTopographyRenderer *topography_renderer = nullptr;
@@ -234,6 +237,10 @@ public:
   void SetTopography(TopographyStore *_topography) noexcept;
   void SetTerrain(RasterTerrain *_terrain) noexcept;
 
+  void SetTrafficVisibleRect(PixelRect rect) noexcept {
+    traffic_visible_rect = rect;
+  }
+
   const std::shared_ptr<RaspStore> &GetRasp() const noexcept {
     return rasp_store;
   }
@@ -298,6 +305,11 @@ public:
     return visible_projection.IsValid()
       ? visible_projection.GetGeoLocation()
       : GeoPoint::Invalid();
+  }
+
+  [[gnu::pure]]
+  PixelRect GetTrafficVisibleRect() const noexcept {
+    return traffic_visible_rect;
   }
 
   void SetLocation(const GeoPoint location) noexcept {

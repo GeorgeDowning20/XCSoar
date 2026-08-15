@@ -12,6 +12,7 @@ source "$SCRIPT_DIR/.env"
 # tracks file timestamps, not variable changes).
 rm -f output/IOS64/Info.plist output/IOS64/Info.plist.xml output/IOS64/xcsoar.ipa
 
-gmake -j12 TARGET=IOS64 IOS_APP_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" ipa
+
+gmake -j12 TARGET=IOS64 IOS_APP_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" FULL_MAP_RESOLUTION=y DEBUG=n ipa
 "$SCRIPT_DIR/sign.sh"
 "$SCRIPT_DIR/install.sh"

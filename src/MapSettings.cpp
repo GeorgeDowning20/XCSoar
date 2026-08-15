@@ -45,6 +45,11 @@ MapSettings::SetDefaults() noexcept
   fade_traffic = true;
   traffic_fade_timeout_minutes = 10;
   use_detailed_flarm_colours = false;
+  traffic_trail_enabled = false;
+  traffic_trail_length_minutes = 10;
+  traffic_trail_width = 1;
+  traffic_trail_memory_limit_mb = 100;
+  traffic_offscreen_marker_size = 100;
   traffic_icon_scale = 100;
   show_thermal_profile = true;
   distance_rings_enabled = false;

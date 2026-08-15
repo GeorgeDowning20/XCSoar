@@ -4,7 +4,9 @@
 #include "GlueMapWindow.hpp"
 #include "Items/List.hpp"
 #include "Items/Builder.hpp"
+#include "Items/MapItem.hpp"
 #include "Items/OverlayMapItem.hpp"
+#include "OffscreenTrafficMarker.hpp"
 #include "Items/RaspMapItem.hpp"
 #include "Dialogs/MapItemListDialog.hpp"
 #include "UIGlobals.hpp"
@@ -19,13 +21,17 @@
 #include "net/client/tim/Thermal.hpp"
 #endif
 #include "Interface.hpp"
+#include "FLARM/Friends.hpp"
 #include "Overlay.hpp"
 #include "OverlayLimits.hpp"
+
+#include <cmath>
 
 bool
 GlueMapWindow::ShowMapItems(const GeoPoint &location,
                             bool show_empty_message,
-                            bool pointer_in_use) const noexcept
+                            bool pointer_in_use,
+                            std::optional<PixelPoint> pointer) const noexcept
 {
   /* not using MapWindowBlackboard here because this method is called
      by the main thread */
@@ -44,6 +50,40 @@ GlueMapWindow::ShowMapItems(const GeoPoint &location,
 
   MapItemList list;
   MapItemListBuilder builder(list, location, range);
+
+  if (pointer) {
+    const unsigned hit_radius = Layout::GetHitRadius();
+    const auto add_offscreen_traffic = [&](FlarmId id,
+                                           const FlarmTraffic &target) {
+      if (!target.location_available ||
+          (FlarmTraffic::IsInjectedSource(target.source) &&
+           settings.online_traffic_map_mode == DisplayOnlineTrafficMapMode::OFF))
+        return false;
+
+      const auto marker = GetOffscreenTrafficMarkerPosition(
+        visible_projection, GetTrafficVisibleRect(), target.location,
+        (unsigned)settings.traffic_offscreen_marker_size);
+      if (!marker ||
+          std::hypot(marker->x - pointer->x, marker->y - pointer->y) > hit_radius)
+        return false;
+
+      list.append(new TrafficMapItem(id, FlarmFriends::GetFriendColor(id)));
+      return true;
+    };
+
+    bool found = false;
+    for (const auto &target : basic.flarm.traffic.list) {
+      if (add_offscreen_traffic(target.id, target)) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found)
+      for (const auto &[id, target] : GetFadingFlarmTraffic())
+        if (add_offscreen_traffic(id, target))
+          break;
+  }
 
   if (settings.item_list.add_location)
       builder.AddLocation(basic, terrain);

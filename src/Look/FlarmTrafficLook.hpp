@@ -7,6 +7,9 @@
 #include "ui/canvas/Pen.hpp"
 #include "ui/canvas/Brush.hpp"
 #include "ui/canvas/Font.hpp"
+#include "FLARM/Color.hpp"
+
+#include <array>
 
 struct TrafficLook;
 
@@ -21,10 +24,9 @@ struct FlarmTrafficLook {
   Color safe_above_color;
   Color safe_below_color;
   Color warning_in_altitude_range_color;
-  Color team_color_green;
-  Color team_color_blue;
-  Color team_color_yellow;
-  Color team_color_magenta;
+  static constexpr size_t TEAM_COLOR_COUNT =
+    static_cast<size_t>(FlarmColor::COUNT) - 1;
+  std::array<Color, TEAM_COLOR_COUNT> team_colors;
 
   Brush warning_brush;
   Brush alarm_brush;
@@ -32,10 +34,7 @@ struct FlarmTrafficLook {
   Brush passive_brush;
   Brush selection_brush;
   Brush radar_brush;
-  Brush team_brush_green;
-  Brush team_brush_blue;
-  Brush team_brush_yellow;
-  Brush team_brush_magenta;
+  std::array<Brush, TEAM_COLOR_COUNT> team_brushes;
   Brush safe_above_brush;
   Brush safe_below_brush;
   Brush warning_in_altitude_range_brush;
@@ -46,10 +45,7 @@ struct FlarmTrafficLook {
   Pen passive_pen;
   Pen selection_pen;
 
-  Pen team_pen_green;
-  Pen team_pen_blue;
-  Pen team_pen_yellow;
-  Pen team_pen_magenta;
+  std::array<Pen, TEAM_COLOR_COUNT> team_pens;
 
   Pen plane_pen, radar_pen;
 
@@ -64,6 +60,16 @@ struct FlarmTrafficLook {
    * Reload pens and fonts after #Layout::Initialise() (DPI / resize).
    */
   void ReinitialiseLayout() noexcept;
+
+  [[gnu::pure]]
+  const Pen &GetTeamPen(FlarmColor color) const noexcept {
+    return team_pens[static_cast<size_t>(color) - 1];
+  }
+
+  [[gnu::pure]]
+  const Brush &GetTeamBrush(FlarmColor color) const noexcept {
+    return team_brushes[static_cast<size_t>(color) - 1];
+  }
 
 private:
   bool small;

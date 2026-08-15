@@ -35,11 +35,16 @@
 #include "FLARM/Details.hpp"
 #include "FLARM/FlarmNetRecord.hpp"
 #include "FLARM/Traffic.hpp"
+#include "FLARM/FadingTraffic.hpp"
 #include "Weather/Features.hpp"
 #include "FLARM/List.hpp"
 #include "time/RoughTime.hpp"
 #include "time/BrokenDateTime.hpp"
 #include "FLARM/TrafficClimbAltIndicators.hpp"
+#include "Geo/GeoVector.hpp"
+#include "Interface.hpp"
+
+#include <optional>
 
 #ifdef HAVE_NOAA
 #include "Renderer/NOAAListRenderer.hpp"
@@ -347,6 +352,14 @@ Draw(Canvas &canvas, PixelRect rc,
     ? nullptr
     : traffic_list->FindTraffic(item.id);
 
+  std::optional<FlarmTraffic> fading;
+  if (traffic == nullptr) {
+    fading = FlarmFadingTraffic::Find(item.id);
+    if (fading)
+      traffic = &*fading;
+  }
+  const bool is_fading = fading.has_value();
+
   const PixelPoint pt(rc.left + icon_size / 2, rc.top + line_height / 2);
 
   // Render the representation of the traffic icon
@@ -361,6 +374,30 @@ Draw(Canvas &canvas, PixelRect rc,
 
   StaticString<256> title_string;
   StaticString<256> info_string;
+
+  // Distance from own-ship, if we know both positions
+  StaticString<32> distance_string;
+  distance_string.clear();
+  if (traffic != nullptr) {
+    const MoreData &basic = CommonInterface::Basic();
+    RoughDistance distance = traffic->distance;
+    if (traffic->absolute_location && traffic->location.IsValid() &&
+        basic.location_available)
+      distance = GeoVector{basic.location, traffic->location}.distance;
+
+    if (double(distance) > 0)
+      distance_string = FormatUserDistanceSmart(distance).c_str();
+  }
+
+  // Time since last update, only meaningful while greyed out/fading
+  StaticString<32> last_seen_string;
+  last_seen_string.clear();
+  if (is_fading && traffic != nullptr) {
+    const auto elapsed =
+      Validity(CommonInterface::Basic().clock).GetTimeDifference(traffic->valid);
+    last_seen_string.Format("%s: %s %s", _("Last seen"),
+                            FormatTimespanSmart(elapsed).c_str(), _("ago"));
+  }
 
 #ifdef HAVE_SKYLINES_TRACKING
   if (traffic != nullptr &&
@@ -382,6 +419,9 @@ Draw(Canvas &canvas, PixelRect rc,
     title_string = title.c_str();
 
     info_string = FlarmTraffic::GetSourceString(traffic->source);
+    if (!distance_string.empty())
+      info_string.AppendFormat(", %s: %s", _("Distance"), distance_string.c_str());
+
     if (traffic->altitude_available) {
       info_string.AppendFormat(", %s: %s", _("Altitude"),
                                FormatUserAltitude(traffic->altitude).c_str());
@@ -391,6 +431,9 @@ Draw(Canvas &canvas, PixelRect rc,
       info_string.AppendFormat(", %s: %s", _("Vario"),
                                FormatUserVerticalSpeed(traffic->climb_rate_avg30s).c_str());
     }
+
+    if (!last_seen_string.empty())
+      info_string.AppendFormat(", %s", last_seen_string.c_str());
   } else
 #endif
   {
@@ -423,6 +466,9 @@ Draw(Canvas &canvas, PixelRect rc,
         info_string.AppendFormat(" [%s]",
                                  FlarmTraffic::GetSourceString(traffic->source));
 
+      if (!distance_string.empty())
+        info_string.AppendFormat(", %s: %s", _("Distance"), distance_string.c_str());
+
       if (traffic->altitude_available)
         info_string.AppendFormat(", %s: %s", _("Altitude"),
                                  FormatUserAltitude(traffic->altitude).c_str());
@@ -431,6 +477,9 @@ Draw(Canvas &canvas, PixelRect rc,
         info_string.AppendFormat(", %s: %s", _("Vario"),
                                  FormatUserVerticalSpeed(traffic->climb_rate_avg30s).c_str());
       }
+
+      if (!last_seen_string.empty())
+        info_string.AppendFormat(", %s", last_seen_string.c_str());
     }
   }
 

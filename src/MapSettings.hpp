@@ -177,6 +177,21 @@ struct MapSettings {
   /** Show FLARM traffic coloured by climb rate and relative altitude ("Colourful traffic") */
   bool use_detailed_flarm_colours;
 
+  /** Draw a trail behind active FLARM traffic on the map. */
+  bool traffic_trail_enabled;
+
+  /** Minutes of FLARM traffic history drawn as a trail (1-30). */
+  int traffic_trail_length_minutes;
+
+  /** Width of FLARM traffic trails in pixels (1-10). */
+  int traffic_trail_width;
+
+  /** Maximum RAM used by FLARM traffic trails in MiB (10-500). */
+  int traffic_trail_memory_limit_mb;
+
+  /** Off-screen FLARM traffic marker size in percent of the default (50-200). */
+  int traffic_offscreen_marker_size;
+
   /**
    * Map FLARM/GliderLink traffic symbol size in percent of the default
    * size (50-200; Configuration -> Map display -> Symbols).

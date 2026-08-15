@@ -11,5 +11,13 @@ enum class FlarmColor : uint8_t {
   BLUE,
   YELLOW,
   MAGENTA,
+  RED,
+  CYAN,
+  ORANGE,
+  PURPLE,
+  LIME,
+  TEAL,
+  PINK,
+  WHITE,
   COUNT
 };

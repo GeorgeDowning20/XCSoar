@@ -5,11 +5,6 @@
 #include "Screen/Layout.hpp"
 #include "Resources.hpp"
 
-constexpr Color TrafficLook::team_color_green;
-constexpr Color TrafficLook::team_color_magenta;
-constexpr Color TrafficLook::team_color_blue;
-constexpr Color TrafficLook::team_color_yellow;
-
 void
 TrafficLook::Initialise(const Font &_font)
 {
@@ -39,10 +34,8 @@ TrafficLook::Initialise(const Font &_font)
 #endif
 
   unsigned width = Layout::ScalePenWidth(2);
-  team_pen_green.Create(width, team_color_green);
-  team_pen_blue.Create(width, team_color_blue);
-  team_pen_yellow.Create(width, team_color_yellow);
-  team_pen_magenta.Create(width, team_color_magenta);
+  for (size_t i = 0; i < TEAM_COLOR_COUNT; ++i)
+    team_pens[i].Create(width, team_colors[i]);
 
   teammate_icon.LoadResource(IDB_TEAMMATE_POS_ALL);
 
@@ -62,6 +55,21 @@ TrafficLook::GetBasicTrafficBrush(const TrafficClimbAltIndicators &indicators) c
   }
 
   return basic_traffic_brushes.same;
+}
+
+Color
+TrafficLook::GetBasicTrafficColor(const TrafficClimbAltIndicators &indicators) const noexcept
+{
+  switch (indicators.GetRelAlt()) {
+  case TrafficClimbAltIndicators::RelAlt::ABOVE:
+    return above_color;
+  case TrafficClimbAltIndicators::RelAlt::BELOW:
+    return below_color;
+  case TrafficClimbAltIndicators::RelAlt::SAME:
+    return same_color;
+  }
+
+  return same_color;
 }
 
 const Brush &
@@ -90,4 +98,43 @@ TrafficLook::GetColourfulTrafficBrush(const TrafficClimbAltIndicators &indicator
   }
 
   return climb_brushes.climb_down;
+}
+
+Color
+TrafficLook::GetColourfulTrafficColor(const TrafficClimbAltIndicators &indicators) const noexcept
+{
+  switch (indicators.GetRelAlt()) {
+  case TrafficClimbAltIndicators::RelAlt::ABOVE:
+    switch (indicators.GetClimb()) {
+    case TrafficClimbAltIndicators::Climb::GOOD:
+      return ColorfulTrafficColors::Above::climb_good;
+    case TrafficClimbAltIndicators::Climb::UP:
+      return ColorfulTrafficColors::Above::climb_up;
+    case TrafficClimbAltIndicators::Climb::DOWN:
+      return ColorfulTrafficColors::Above::climb_down;
+    }
+    break;
+  case TrafficClimbAltIndicators::RelAlt::BELOW:
+    switch (indicators.GetClimb()) {
+    case TrafficClimbAltIndicators::Climb::GOOD:
+      return ColorfulTrafficColors::Below::climb_good;
+    case TrafficClimbAltIndicators::Climb::UP:
+      return ColorfulTrafficColors::Below::climb_up;
+    case TrafficClimbAltIndicators::Climb::DOWN:
+      return ColorfulTrafficColors::Below::climb_down;
+    }
+    break;
+  case TrafficClimbAltIndicators::RelAlt::SAME:
+    switch (indicators.GetClimb()) {
+    case TrafficClimbAltIndicators::Climb::GOOD:
+      return ColorfulTrafficColors::Same::climb_good;
+    case TrafficClimbAltIndicators::Climb::UP:
+      return ColorfulTrafficColors::Same::climb_up;
+    case TrafficClimbAltIndicators::Climb::DOWN:
+      return ColorfulTrafficColors::Same::climb_down;
+    }
+    break;
+  }
+
+  return ColorfulTrafficColors::Same::climb_down;
 }

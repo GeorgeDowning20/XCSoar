@@ -7,11 +7,17 @@
 #include "ui/canvas/Pen.hpp"
 #include "ui/canvas/Brush.hpp"
 #include "ui/canvas/Icon.hpp"
+#include "FLARM/Color.hpp"
 #include "FLARM/TrafficClimbAltIndicators.hpp"
+
+#include <array>
 
 class Font;
 
 struct TrafficLook {
+  static constexpr size_t TEAM_COLOR_COUNT =
+    static_cast<size_t>(FlarmColor::COUNT) - 1;
+
   /** Basic (single colour per zone) relative-altitude colours. */
   static constexpr Color above_color{0x1d,0x9b,0xc5};
   static constexpr Color same_color{0xff,0x00,0xff};
@@ -67,15 +73,14 @@ struct TrafficLook {
   Brush fading_brush;
 #endif
 
-  static constexpr Color team_color_green = Color(0x74, 0xff, 0);
-  static constexpr Color team_color_magenta = Color(0xff, 0, 0xcb);
-  static constexpr Color team_color_blue = Color(0, 0x90, 0xff);
-  static constexpr Color team_color_yellow = Color(0xff, 0xe8, 0);
+  static constexpr std::array<Color, TEAM_COLOR_COUNT> team_colors{{
+    {0x74, 0xff, 0x00}, {0x00, 0x90, 0xff}, {0xff, 0xe8, 0x00},
+    {0xff, 0x00, 0xcb}, {0xff, 0x35, 0x2f}, {0x00, 0xe0, 0xe0},
+    {0xff, 0x84, 0x38}, {0x90, 0x40, 0xd0}, {0xa0, 0xe8, 0x20},
+    {0x00, 0xa0, 0x90}, {0xff, 0x70, 0xa0}, {0xff, 0xff, 0xff},
+  }};
 
-  Pen team_pen_green;
-  Pen team_pen_blue;
-  Pen team_pen_yellow;
-  Pen team_pen_magenta;
+  std::array<Pen, TEAM_COLOR_COUNT> team_pens;
 
   MaskedIcon teammate_icon;
 
@@ -83,12 +88,30 @@ struct TrafficLook {
 
   void Initialise(const Font &font);
 
+  [[gnu::const]]
+  static Color GetTeamColor(FlarmColor color) noexcept {
+    return team_colors[static_cast<size_t>(color) - 1];
+  }
+
+  [[gnu::pure]]
+  const Pen &GetTeamPen(FlarmColor color) const noexcept {
+    return team_pens[static_cast<size_t>(color) - 1];
+  }
+
   /** Single colour per relative-altitude zone. */
   [[gnu::pure]]
   const Brush &GetBasicTrafficBrush(const TrafficClimbAltIndicators &indicators) const noexcept;
 
+  /** Colour used by the basic traffic palette. */
+  [[gnu::pure]]
+  Color GetBasicTrafficColor(const TrafficClimbAltIndicators &indicators) const noexcept;
+
   /** Colour depends on both relative altitude and climb rate. */
   [[gnu::pure]]
   const Brush &GetColourfulTrafficBrush(const TrafficClimbAltIndicators &indicators) const noexcept;
+
+  /** Colour used by the colourful traffic palette. */
+  [[gnu::pure]]
+  Color GetColourfulTrafficColor(const TrafficClimbAltIndicators &indicators) const noexcept;
 };
 

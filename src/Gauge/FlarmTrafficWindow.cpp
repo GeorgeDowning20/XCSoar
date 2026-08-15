@@ -255,28 +255,9 @@ FlarmTrafficWindow::PaintRadarNoTraffic(Canvas &canvas) const noexcept
 static const Pen *
 FlarmColorPen(const FlarmTrafficLook &look, FlarmColor color) noexcept
 {
-  switch (color) {
-  case FlarmColor::NONE:
-    break;
-
-  case FlarmColor::GREEN:
-    return &look.team_pen_green;
-
-  case FlarmColor::BLUE:
-    return &look.team_pen_blue;
-
-  case FlarmColor::YELLOW:
-    return &look.team_pen_yellow;
-
-  case FlarmColor::MAGENTA:
-    return &look.team_pen_magenta;
-
-  case FlarmColor::COUNT:
-    assert(false);
-    gcc_unreachable();
-  }
-
-  return nullptr;
+  return color == FlarmColor::NONE || color == FlarmColor::COUNT
+    ? nullptr
+    : &look.GetTeamPen(color);
 }
 
 void
