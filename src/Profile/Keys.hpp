@@ -112,6 +112,7 @@ constexpr std::string_view AppUseSWLandablesRendering = "AppUseSWLandablesRender
 constexpr std::string_view AppLandableRenderingScale = "AppLandableRenderingScale";
 constexpr std::string_view MapWaypointIconScale = "MapWaypointIconScale";
 constexpr std::string_view TrafficIconScale = "TrafficIconScale";
+constexpr std::string_view ColorfulTraffic = "ColorfulTraffic";
 constexpr std::string_view AircraftIconScale = "AircraftIconScale";
 constexpr std::string_view AppScaleRunwayLength = "AppScaleRunwayLength";
 
@@ -154,6 +155,7 @@ constexpr std::string_view TerrainBrightness = "TerrainBrightness";
 constexpr std::string_view TerrainRamp = "TerrainRamp";
 constexpr std::string_view EnableFLARMMap = "EnableFLARMDisplay";
 constexpr std::string_view FadeTraffic = "FadeTraffic";
+constexpr std::string_view TrafficFadeTimeout = "TrafficFadeTimeout";
 constexpr std::string_view EnableFLARMGauge = "EnableFLARMGauge";
 constexpr std::string_view AutoCloseFlarmDialog = "AutoCloseFlarmDialog";
 constexpr std::string_view EnableTAGauge = "EnableTAGauge";

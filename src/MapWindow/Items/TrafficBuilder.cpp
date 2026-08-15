@@ -23,3 +23,20 @@ MapItemListBuilder::AddTraffic(const TrafficList &flarm)
     }
   }
 }
+
+void
+MapItemListBuilder::AddFadingTraffic(const std::map<FlarmId, FlarmTraffic> &fading)
+{
+  for (const auto &[id, t] : fading) {
+    if (list.full())
+      break;
+
+    if (!t.location_available || !t.location.IsValid())
+      continue;
+
+    if (location.DistanceS(t.location) < range) {
+      auto color = FlarmFriends::GetFriendColor(id);
+      list.append(new TrafficMapItem(id, color));
+    }
+  }
+}

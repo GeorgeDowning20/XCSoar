@@ -51,9 +51,11 @@ GetMapTrafficScale(unsigned scale_percent) noexcept
 
 static void
 DrawFlarmArrow(Canvas &canvas, const TrafficLook &traffic_look,
-               bool fading, const FlarmTraffic &traffic,
+               bool fading, bool colorful_traffic,
+               const FlarmTraffic &traffic,
                const Angle angle, const FlarmColor color,
                const PixelPoint pt,
+               const TrafficClimbAltIndicators &indicators,
                int arrow_scale, unsigned circle_radius) noexcept
 {
   BulkPixelPoint arrow[] = {
@@ -90,13 +92,10 @@ DrawFlarmArrow(Canvas &canvas, const TrafficLook &traffic_look,
       canvas.Select(traffic_look.alarm_brush);
       break;
     case FlarmTraffic::AlarmType::NONE:
-      if (traffic.relative_altitude > (const RoughAltitude)50) {
-        canvas.Select(traffic_look.safe_above_brush);
-      } else if (traffic.relative_altitude > (const RoughAltitude)-50) {
-        canvas.Select(traffic_look.warning_in_altitude_range_brush);
-      } else {
-        canvas.Select(traffic_look.safe_below_brush);
-      }
+      if (colorful_traffic)
+        canvas.Select(traffic_look.GetColourfulTrafficBrush(indicators));
+      else
+        canvas.Select(traffic_look.GetBasicTrafficBrush(indicators));
       break;
     }
 
@@ -147,26 +146,31 @@ TrafficRenderer::MapLabelLayout(unsigned scale_percent) noexcept
 
 void
 TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
-                      bool fading,
+                      bool fading, bool colorful_traffic,
                       const FlarmTraffic &traffic, const Angle angle,
                       const FlarmColor color, const PixelPoint pt,
+                      const TrafficClimbAltIndicators &indicators,
                       unsigned scale_percent) noexcept
 {
   const MapTrafficScale scale = GetMapTrafficScale(scale_percent);
-  DrawFlarmArrow(canvas, traffic_look, fading, traffic, angle, color, pt,
-                 scale.arrow_scale, scale.circle_radius);
+  DrawFlarmArrow(canvas, traffic_look, fading, colorful_traffic, traffic,
+                angle, color, pt, indicators,
+                scale.arrow_scale, scale.circle_radius);
 }
 
 void
 TrafficRenderer::DrawList(Canvas &canvas, const TrafficLook &traffic_look,
+                          bool colorful_traffic,
                           const FlarmTraffic &traffic, const Angle angle,
                           const FlarmColor color, const PixelPoint pt,
-                          unsigned icon_size) noexcept
+                          unsigned icon_size,
+                          const TrafficClimbAltIndicators &indicators) noexcept
 {
   const MapTrafficScale scale = MapTrafficScaleFromIconSize(icon_size);
 
-  DrawFlarmArrow(canvas, traffic_look, false, traffic, angle, color, pt,
-                 scale.arrow_scale, scale.circle_radius);
+  DrawFlarmArrow(canvas, traffic_look, false, colorful_traffic, traffic,
+                angle, color, pt, indicators,
+                scale.arrow_scale, scale.circle_radius);
 }
 
 void
@@ -182,7 +186,7 @@ TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
     { 0, 3 },
   };
 
-  canvas.Select(traffic_look.safe_above_brush);
+  canvas.Select(traffic_look.basic_traffic_brushes.same);
 
   if (IsDithered())
     canvas.Select(Pen(Layout::ScalePenWidth(2), COLOR_BLACK));

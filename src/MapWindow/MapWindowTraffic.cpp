@@ -9,6 +9,7 @@
 #include "Renderer/TextInBox.hpp"
 #include "Renderer/TrafficRenderer.hpp"
 #include "FLARM/Friends.hpp"
+#include "FLARM/TrafficClimbAltIndicators.hpp"
 #include "MapSettings.hpp"
 #include "util/StringCompare.hxx"
 
@@ -16,10 +17,11 @@
 
 static void
 DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
-                 const TrafficLook &look, bool fading,
+                 const TrafficLook &look, bool fading, bool colorful_traffic,
                  const PixelPoint aircraft_pos,
                  const FlarmTraffic &traffic,
                  DisplayOnlineTrafficMapMode online_mode,
+                 const double set_mc, const double current_30s_vario,
                  unsigned scale_percent) noexcept
 {
   assert(traffic.location_available);
@@ -69,9 +71,13 @@ DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
 
   auto color = FlarmFriends::GetFriendColor(traffic.id);
 
-  TrafficRenderer::Draw(canvas, look, fading, traffic,
+  const TrafficClimbAltIndicators indicators =
+    TrafficClimbAltIndicators::GetClimbAltIndicators(traffic, set_mc,
+                                                     current_30s_vario);
+
+  TrafficRenderer::Draw(canvas, look, fading, colorful_traffic, traffic,
                         traffic.track - projection.GetScreenAngle(),
-                        color, sc, scale_percent);
+                        color, sc, indicators, scale_percent);
 }
 
 /**
@@ -91,17 +97,14 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
 
   const WindowProjection &projection = render_projection;
 
-  // if zoomed in too far out, dont draw traffic since it will be too close to
-  // the glider and so will be meaningless (serves only to clutter, cant help
-  // the pilot)
-  if (projection.GetMapScale() > 7300)
-    return;
-
   canvas.Select(*traffic_look.font);
 
   const DisplayOnlineTrafficMapMode online_mode =
     GetMapSettings().online_traffic_map_mode;
   const unsigned scale_percent = (unsigned)GetMapSettings().traffic_icon_scale;
+  const bool colorful_traffic = GetMapSettings().use_detailed_flarm_colours;
+  const double set_mc = GetComputerSettings().polar.glide_polar_task.GetMC();
+  const double current_30s_vario = Calculated().average;
 
   // Circle through the traffic targets
   for (const auto &traffic : flarm.list) {
@@ -119,8 +122,9 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
        component non-zero so due-north/south targets still draw. */
     if (traffic.absolute_location ||
         traffic.relative_north != 0 || traffic.relative_east != 0)
-      DrawFlarmTraffic(canvas, projection, traffic_look, false,
-                       aircraft_pos, traffic, online_mode, scale_percent);
+      DrawFlarmTraffic(canvas, projection, traffic_look, false, colorful_traffic,
+                       aircraft_pos, traffic, online_mode,
+                       set_mc, current_30s_vario, scale_percent);
   }
 
   if (const auto &fading = GetFadingFlarmTraffic(); !fading.empty()) {
@@ -133,8 +137,9 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
 
       if (traffic.absolute_location ||
           traffic.relative_north != 0 || traffic.relative_east != 0)
-        DrawFlarmTraffic(canvas, projection, traffic_look, true,
-                         aircraft_pos, traffic, online_mode, scale_percent);
+        DrawFlarmTraffic(canvas, projection, traffic_look, true, colorful_traffic,
+                         aircraft_pos, traffic, online_mode,
+                         set_mc, current_30s_vario, scale_percent);
     }
   }
 }

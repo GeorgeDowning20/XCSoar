@@ -4,6 +4,7 @@
 #pragma once
 
 #include "FLARM/Color.hpp"
+#include "FLARM/TrafficClimbAltIndicators.hpp"
 
 struct PixelPoint;
 class Canvas;
@@ -15,14 +16,17 @@ class Angle;
 namespace TrafficRenderer
 {
 /**
+ * @param colorful_traffic Colour by climb rate and relative altitude
+ * ("Colourful traffic") instead of just relative altitude.
  * @param scale_percent Size of the map symbol as a percentage of the
  * default size (see MapSettings::traffic_icon_scale).
  */
 void
 Draw(Canvas &canvas, const TrafficLook &traffic_look,
-     bool fading,
+     bool fading, bool colorful_traffic,
      const FlarmTraffic &traffic, Angle angle,
      FlarmColor color, PixelPoint pt,
+     const TrafficClimbAltIndicators &indicators={},
      unsigned scale_percent=100) noexcept;
 
 /**
@@ -30,9 +34,11 @@ Draw(Canvas &canvas, const TrafficLook &traffic_look,
  */
 void
 DrawList(Canvas &canvas, const TrafficLook &traffic_look,
+         bool colorful_traffic,
          const FlarmTraffic &traffic, Angle angle,
          FlarmColor color, PixelPoint pt,
-         unsigned icon_size) noexcept;
+         unsigned icon_size,
+         const TrafficClimbAltIndicators &indicators={}) noexcept;
 
 void
 Draw(Canvas &canvas, const TrafficLook &traffic_look,

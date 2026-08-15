@@ -169,6 +169,15 @@ struct MapSettings {
   bool fade_traffic;
 
   /**
+   * Minutes a FLARM target stays visible (greyed out) on the map
+   * after it disappears, before being removed entirely (1-30).
+   */
+  int traffic_fade_timeout_minutes;
+
+  /** Show FLARM traffic coloured by climb rate and relative altitude ("Colourful traffic") */
+  bool use_detailed_flarm_colours;
+
+  /**
    * Map FLARM/GliderLink traffic symbol size in percent of the default
    * size (50-200; Configuration -> Map display -> Symbols).
    */

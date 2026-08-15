@@ -87,6 +87,7 @@ GlueMapWindow::ShowMapItems(const GeoPoint &location,
 #endif
 
   builder.AddTraffic(basic.flarm.traffic);
+  builder.AddFadingTraffic(GetFadingFlarmTraffic());
 
 #ifdef ENABLE_OPENGL
 #ifdef HAVE_HTTP

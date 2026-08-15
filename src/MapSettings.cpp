@@ -43,6 +43,8 @@ MapSettings::SetDefaults() noexcept
   show_flarm_on_map = true;
   show_flarm_alarm_level = true;
   fade_traffic = true;
+  traffic_fade_timeout_minutes = 10;
+  use_detailed_flarm_colours = false;
   traffic_icon_scale = 100;
   show_thermal_profile = true;
   distance_rings_enabled = false;

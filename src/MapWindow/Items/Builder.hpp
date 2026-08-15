@@ -4,7 +4,9 @@
 #pragma once
 
 #include "Geo/GeoPoint.hpp"
+#include "FLARM/Id.hpp"
 
+#include <map>
 #include <span>
 
 class MapItemList;
@@ -18,6 +20,7 @@ struct MoreData;
 struct DerivedInfo;
 class ProtectedTaskManager;
 struct TrafficList;
+struct FlarmTraffic;
 struct ThermalLocatorInfo;
 struct NMEAInfo;
 class RasterTerrain;
@@ -51,6 +54,12 @@ public:
                           const MoreData &basic, const DerivedInfo &calculated);
   void AddTaskOZs(const ProtectedTaskManager &task);
   void AddTraffic(const TrafficList &flarm);
+
+  /**
+   * Add recently-disappeared ("fading"/grey) FLARM targets so they
+   * remain tappable for details while still shown on the map.
+   */
+  void AddFadingTraffic(const std::map<FlarmId, FlarmTraffic> &fading);
   void AddThermals(const ThermalLocatorInfo &thermals,
                    const MoreData &basic, const DerivedInfo &calculated);
 

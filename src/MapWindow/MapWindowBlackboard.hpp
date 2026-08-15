@@ -6,6 +6,7 @@
 #include "Blackboard/BaseBlackboard.hpp"
 #include "Blackboard/ComputerSettingsBlackboard.hpp"
 #include "Blackboard/MapSettingsBlackboard.hpp"
+#include "FLARM/FadingTraffic.hpp"
 #include "thread/Debug.hpp"
 #include "UIState.hpp"
 
@@ -22,12 +23,6 @@ class MapWindowBlackboard:
   public MapSettingsBlackboard
 {
   UIState ui_state;
-
-  /**
-   * FLARM traffic that has disappeared, but will remain on the map
-   * (greyed out) for some time.
-   */
-  std::map<FlarmId, FlarmTraffic> fading_flarm_traffic;
 
 protected:
   MapWindowBlackboard() noexcept {
@@ -50,9 +45,13 @@ protected:
     return BaseBlackboard::Calculated();
   }
 
-  [[gnu::const]]
-  const auto &GetFadingFlarmTraffic() const noexcept {
-    return fading_flarm_traffic;
+  /**
+   * FLARM traffic that has disappeared, but will remain on the map
+   * (greyed out) for some time.  See #FlarmFadingTraffic.
+   */
+  [[gnu::pure]]
+  auto GetFadingFlarmTraffic() const noexcept {
+    return FlarmFadingTraffic::GetAll();
   }
 
   [[gnu::const]]

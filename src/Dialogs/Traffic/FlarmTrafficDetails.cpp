@@ -17,15 +17,18 @@
 #include "Widget/RowFormWidget.hpp"
 #include "FLARM/FlarmNetRecord.hpp"
 #include "FLARM/Traffic.hpp"
+#include "FLARM/List.hpp"
 #include "FLARM/Details.hpp"
 #include "FLARM/Friends.hpp"
 #include "FLARM/Glue.hpp"
+#include "FLARM/FadingTraffic.hpp"
 #include "Geo/GeoVector.hpp"
 #include "Renderer/ColorButtonRenderer.hpp"
 #include "UIGlobals.hpp"
 #include "Components.hpp"
 #include "Formatter/UserUnits.hpp"
 #include "Formatter/AngleFormatter.hpp"
+#include "Formatter/TimeFormatter.hpp"
 #include "util/StringBuilder.hxx"
 #include "util/StringCompare.hxx"
 #include "util/Macros.hpp"
@@ -34,6 +37,8 @@
 #include "Blackboard/LiveBlackboard.hpp"
 #include "Blackboard/BlackboardListener.hpp"
 #include "TeamActions.hpp"
+
+#include <optional>
 
 class FlarmTrafficDetailsWidget final
   : public RowFormWidget, NullBlackboardListener {
@@ -44,6 +49,7 @@ class FlarmTrafficDetailsWidget final
     DISTANCE,
     ALTITUDE,
     VARIO,
+    LAST_SEEN,
     SPACER2,
     PILOT,
     AIRPORT,
@@ -72,6 +78,16 @@ public:
 private:
   void UpdateChanging(const MoreData &basic);
   void Update();
+
+  /**
+   * Look up the target in the live traffic list, falling back to the
+   * last known ("fading"/grey) snapshot if it has disappeared.  The
+   * fallback snapshot, if used, is stored in @p fallback so its
+   * lifetime matches the returned pointer.
+   */
+  static const FlarmTraffic *
+  ResolveTarget(const TrafficList &live, FlarmId target_id,
+               std::optional<FlarmTraffic> &fallback) noexcept;
 
   void OnCallsignClicked();
   void OnTeamClicked();
@@ -118,6 +134,7 @@ FlarmTrafficDetailsWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
   AddReadOnly(_("Distance"));
   AddReadOnly(_("Altitude"));
   AddReadOnly(_("Vario"));
+  AddReadOnly(_("Last seen"));
   AddSpacer();
   AddReadOnly(_("Pilot"));
   AddReadOnly(_("Airport"));
@@ -148,14 +165,29 @@ FlarmTrafficDetailsWidget::Hide() noexcept
  * Updates all the dialogs fields, that are changing frequently.
  * e.g. climb speed, distance, height
  */
+const FlarmTraffic *
+FlarmTrafficDetailsWidget::ResolveTarget(const TrafficList &live,
+                                         FlarmId target_id,
+                                         std::optional<FlarmTraffic> &fallback) noexcept
+{
+  if (const FlarmTraffic *target = live.FindTraffic(target_id);
+      target != nullptr)
+    return target;
+
+  fallback = FlarmFadingTraffic::Find(target_id);
+  return fallback ? &*fallback : nullptr;
+}
+
 void
 FlarmTrafficDetailsWidget::UpdateChanging(const MoreData &basic)
 {
   char tmp[40];
   const char *value;
 
-  const FlarmTraffic* target =
-    basic.flarm.traffic.FindTraffic(target_id);
+  std::optional<FlarmTraffic> fallback;
+  const FlarmTraffic *target =
+    ResolveTarget(basic.flarm.traffic, target_id, fallback);
+  const bool is_fading = fallback.has_value();
 
   bool target_ok = target && target->IsDefined();
 
@@ -219,6 +251,16 @@ FlarmTrafficDetailsWidget::UpdateChanging(const MoreData &basic)
     value = "--";
 
   SetText(VARIO, value);
+
+  // Fill "last seen" field (only meaningful while greyed out/fading)
+  if (target_ok && is_fading) {
+    const auto elapsed = Validity(basic.clock).GetTimeDifference(target->valid);
+    StringFormatUnsafe(tmp, "%s %s", FormatTimespanSmart(elapsed).c_str(), _("ago"));
+    value = tmp;
+  } else
+    value = "--";
+
+  SetText(LAST_SEEN, value);
 }
 
 /**
@@ -237,8 +279,9 @@ FlarmTrafficDetailsWidget::Update()
                      _("Traffic Details"), target_id.Format(tmp_id));
   dialog.SetCaption(tmp);
 
-  const FlarmTraffic* target =
-    CommonInterface::Basic().flarm.traffic.FindTraffic(target_id);
+  std::optional<FlarmTraffic> fallback;
+  const FlarmTraffic *target =
+    ResolveTarget(CommonInterface::Basic().flarm.traffic, target_id, fallback);
 
   const ResolvedInfo info = FlarmDetails::ResolveInfo(target_id);
 

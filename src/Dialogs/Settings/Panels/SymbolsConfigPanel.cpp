@@ -4,6 +4,7 @@
 #include "SymbolsConfigPanel.hpp"
 #include "Profile/Keys.hpp"
 #include "Form/DataField/Enum.hpp"
+#include "Form/DataField/Boolean.hpp"
 #include "Form/DataField/Listener.hpp"
 #include "Interface.hpp"
 #include "Language/Language.hpp"
@@ -15,6 +16,8 @@ enum ControlIndex {
   DISPLAY_TRACK_BEARING,
   ENABLE_FLARM_MAP,
   FADE_TRAFFIC,
+  TRAFFIC_FADE_TIMEOUT,
+  COLORFUL_TRAFFIC,
   TRAFFIC_ICON_SCALE,
   TRAIL_LENGTH,
   TRAIL_DRIFT,
@@ -61,6 +64,9 @@ SymbolsConfigPanel::OnModified(DataField &df) noexcept
     const DataFieldEnum &dfe = (const DataFieldEnum &)df;
     TrailSettings::Length trail_length = (TrailSettings::Length)dfe.GetValue();
     ShowTrailControls(trail_length != TrailSettings::Length::OFF);
+  } else if (IsDataField(FADE_TRAFFIC, df)) {
+    const DataFieldBoolean &dfb = (const DataFieldBoolean &)df;
+    SetRowVisible(TRAFFIC_FADE_TIMEOUT, dfb.GetValue());
   }
 }
 
@@ -142,7 +148,19 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
              settings_map.show_flarm_on_map);
 
   AddBoolean(_("Fade traffic"), _("Keep showing traffic for a while after it has disappeared."),
-             settings_map.fade_traffic);
+             settings_map.fade_traffic, this);
+
+  AddInteger(_("Traffic fade timeout"),
+             _("How long a FLARM target stays visible (greyed out) on the map "
+               "after it disappears, before being removed entirely."),
+             "%u min", "%u", 1, 30, 1,
+             settings_map.traffic_fade_timeout_minutes);
+  SetExpertRow(TRAFFIC_FADE_TIMEOUT);
+
+  AddBoolean(_("Colourful traffic"),
+             _("Show traffic in different colours depending on the climb rate and relative altitude."),
+             settings_map.use_detailed_flarm_colours);
+  SetExpertRow(COLORFUL_TRAFFIC);
 
   AddInteger(_("Traffic icon size"),
              _("Size of FLARM/GliderLink traffic symbols on the map as a "
@@ -203,6 +221,7 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
              settings_map.distance_rings_enabled);
 
   ShowTrailControls(settings_map.trail.length != TrailSettings::Length::OFF);
+  SetRowVisible(TRAFFIC_FADE_TIMEOUT, settings_map.fade_traffic);
 }
 
 bool
@@ -220,6 +239,12 @@ SymbolsConfigPanel::Save(bool &_changed) noexcept
 
   changed |= SaveValue(FADE_TRAFFIC, ProfileKeys::FadeTraffic,
                        settings_map.fade_traffic);
+
+  changed |= SaveValueInteger(TRAFFIC_FADE_TIMEOUT, ProfileKeys::TrafficFadeTimeout,
+                              settings_map.traffic_fade_timeout_minutes);
+
+  changed |= SaveValue(COLORFUL_TRAFFIC, ProfileKeys::ColorfulTraffic,
+                       settings_map.use_detailed_flarm_colours);
 
   changed |= SaveValueInteger(TRAFFIC_ICON_SCALE, ProfileKeys::TrafficIconScale,
                               settings_map.traffic_icon_scale);

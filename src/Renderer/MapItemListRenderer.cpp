@@ -39,6 +39,7 @@
 #include "FLARM/List.hpp"
 #include "time/RoughTime.hpp"
 #include "time/BrokenDateTime.hpp"
+#include "FLARM/TrafficClimbAltIndicators.hpp"
 
 #ifdef HAVE_NOAA
 #include "Renderer/NOAAListRenderer.hpp"
@@ -331,7 +332,8 @@ Draw(Canvas &canvas, PixelRect rc,
      const TrafficMapItem &item,
      const TwoTextRowsRenderer &row_renderer,
      const TrafficLook &traffic_look,
-     const TrafficList *traffic_list)
+     const TrafficList *traffic_list,
+     const MapSettings &settings)
 {
   const unsigned line_height = rc.GetHeight();
   const unsigned text_padding = Layout::GetTextPadding();
@@ -350,8 +352,10 @@ Draw(Canvas &canvas, PixelRect rc,
   // Render the representation of the traffic icon
   if (traffic != nullptr)
     TrafficRenderer::DrawList(canvas, traffic_look,
+                              settings.use_detailed_flarm_colours,
                               *traffic, traffic->track,
-                              item.color, pt, icon_size);
+                              item.color, pt, icon_size,
+                              TrafficClimbAltIndicators::GetClimbAltIndicators(*traffic));
 
   rc.left += icon_size + text_padding;
 
@@ -498,7 +502,7 @@ MapItemListRenderer::Draw(Canvas &canvas, const PixelRect rc,
 
   case MapItem::Type::TRAFFIC:
     ::Draw(canvas, rc, (const TrafficMapItem &)item,
-           row_renderer, traffic_look, traffic_list);
+           row_renderer, traffic_look, traffic_list, settings);
     break;
 
   case MapItem::Type::THERMAL:
