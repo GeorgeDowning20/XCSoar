@@ -288,7 +288,9 @@ GlueMapWindow::OnMouseUp(PixelPoint p) noexcept
 #ifndef ENABLE_OPENGL
     /* allow the use of the stretched last buffer for the next two
        redraws */
+#ifndef FULL_MAP_RESOLUTION
     scale_buffer = 2;
+#endif
 #endif
 
 #ifdef ENABLE_OPENGL

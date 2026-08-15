@@ -197,6 +197,10 @@ RasterRenderer::~RasterRenderer() noexcept
 static unsigned
 GetQuantisation() noexcept
 {
+#ifdef FULL_MAP_RESOLUTION
+  /* always render at full resolution regardless of user activity */
+  return 1;
+#else
   if (IsUserIdle(1500))
     /* full terrain resolution when the user stops interacting */
     return 1;
@@ -207,6 +211,7 @@ GetQuantisation() noexcept
   else
     /* the user is actively operating XCSoar: reduce UI latency */
     return Layout::FastScale(2);
+#endif
 }
 
 bool

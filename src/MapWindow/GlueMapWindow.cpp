@@ -215,7 +215,9 @@ GlueMapWindow::QuickRedraw() noexcept
 
   /* quickly stretch the existing buffer into the window */
 
+#ifndef FULL_MAP_RESOLUTION
   scale_buffer = 2;
+#endif
 #endif
 
   Invalidate();
