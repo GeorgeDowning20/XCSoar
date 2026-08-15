@@ -535,6 +535,15 @@ FinishPortField(DeviceConfig &config, const DataFieldEnum &df) noexcept
 
     config.port_type = new_type;
     config.bluetooth_mac = df.GetAsString();
+    // Save the friendly display name (e.g. "LXNAV-NANO") so it survives
+    // profile reload and shows in the device list instead of the raw UUID.
+    {
+      const char *disp = df.GetAsDisplayString();
+      if (disp != nullptr && *disp != '\0')
+        config.port_name = disp;
+      else
+        config.port_name = config.bluetooth_mac;
+    }
     return true;
 
   case DeviceConfig::PortType::IOIOUART:

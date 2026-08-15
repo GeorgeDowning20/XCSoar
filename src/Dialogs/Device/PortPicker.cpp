@@ -13,6 +13,7 @@
 #include "ui/event/Notify.hpp"
 #include "Language/Language.hpp"
 #include "UIGlobals.hpp"
+#include "LogFile.hpp"
 
 #ifdef ANDROID
 #include "java/Global.hxx"
@@ -22,6 +23,15 @@
 #include "Android/DetectDeviceListener.hpp"
 #include "thread/Mutex.hxx"
 #include <list>
+#endif
+
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE
+#include "Apple/BluetoothManager.hpp"
+#include "thread/Mutex.hxx"
+#include <list>
+#endif
 #endif
 
 #include <cassert>
@@ -93,6 +103,24 @@ class PortPickerWidget
   UI::Notify detected_notify{[this]{ OnDetectedNotification(); }};
 #endif
 
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+  struct DetectedPort {
+    DeviceConfig::PortType type;
+    std::string address, name;
+  };
+
+  std::unique_ptr<AppleBluetoothManager> bt_manager;
+  std::unique_ptr<class iOSBluetoothListener> bt_listener;
+
+  Mutex detected_mutex;
+  std::list<DetectedPort> detected_list;
+  bool is_scanning = false;
+
+  UI::Notify detected_notify{[this]{ OnDetectedNotification(); }};
+#endif
+#endif
+
 public:
   PortPickerWidget(WndForm &_dialog, DataFieldEnum &_df) noexcept
     :dialog(_dialog),
@@ -152,6 +180,13 @@ public:
         usb_serial_helper->AddDetectDeviceListener(env, *this);
     }
 #endif
+
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+    is_scanning = true;
+    OnStartIOSBluetoothScanning();
+#endif
+#endif
   }
 
   void Hide() noexcept override {
@@ -167,6 +202,17 @@ public:
                                                     usb_serial_detect_listener);
       usb_serial_detect_listener = {};
     }
+#endif
+
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+    is_scanning = false;
+    if (bt_manager) {
+      bt_manager->StopScanning();
+      bt_manager = nullptr;
+      bt_listener = nullptr;
+    }
+#endif
 #endif
 
     ListWidget::Hide();
@@ -187,6 +233,50 @@ public:
     dialog.SetModalResult(mrOK);
   }
 
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+  friend class iOSBluetoothListener;
+  
+  void OnIOSDeviceDiscovered(const AppleBluetoothDevice &device) noexcept {
+    if (!is_scanning) {
+      LogFormat("iOS Bluetooth: Ignoring device discovered callback - not scanning");
+      return;
+    }
+    
+    // Check if this device is already in the detected_list
+    {
+      const std::lock_guard lock{detected_mutex};
+      for (const auto &existing : detected_list) {
+        if (existing.address == device.address) {
+          LogFormat("iOS Bluetooth: Device already discovered: %s", device.address.c_str());
+          return;  // Device already discovered, skip it
+        }
+      }
+    }
+    
+    // BLE devices broadcasting NMEA likely use BLE_HM10 protocol
+    DetectedPort detected{
+      DeviceConfig::PortType::BLE_SERIAL,
+      device.address,
+      device.name
+    };
+    
+    {
+      const std::lock_guard lock{detected_mutex};
+      detected_list.emplace_back(detected);
+    }
+    
+    detected_notify.SendNotification();
+  }
+
+  void OnStartIOSBluetoothScanning() noexcept;
+
+private:
+  void UpdateItem(DetectedPort &&detected) noexcept;
+  void OnDetectedNotification() noexcept;
+#endif
+#endif
+
 #ifdef ANDROID
 private:
   /* virtual methods from class DetectDeviceListener */
@@ -198,6 +288,42 @@ private:
   void OnDetectedNotification() noexcept;
 #endif
 };
+
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+/**
+ * iOS Bluetooth listener for device discovery
+ */
+class iOSBluetoothListener : public AppleBluetoothListener {
+  PortPickerWidget &widget;
+
+public:
+  explicit iOSBluetoothListener(PortPickerWidget &_widget) : widget(_widget) {}
+
+  void OnDeviceDiscovered(const AppleBluetoothDevice &device) noexcept override {
+    widget.OnIOSDeviceDiscovered(device);
+  }
+
+  void OnDiscoveryFinished() noexcept override {
+    // Optional: notify when discovery is done
+  }
+
+  void OnError(const char *) noexcept override {
+    // Errors are logged, continue scanning
+  }
+};
+
+void
+PortPickerWidget::OnStartIOSBluetoothScanning() noexcept
+{
+  if (!bt_manager) {
+    bt_manager = std::make_unique<AppleBluetoothManager>();
+    bt_listener = std::make_unique<iOSBluetoothListener>(*this);
+    bt_manager->StartScanning(bt_listener.get());
+  }
+}
+#endif
+#endif
 
 void
 PortPickerWidget::ReloadComboList() noexcept
@@ -279,6 +405,53 @@ PortPickerWidget::OnDetectedNotification() noexcept
   ReloadComboList();
 }
 
+#endif
+
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+
+inline void
+PortPickerWidget::UpdateItem(DetectedPort &&detected) noexcept
+{
+  UpdatePortEntry(df, detected.type, detected.address.c_str(),
+                  detected.name.empty() ? nullptr : detected.name.c_str());
+}
+
+inline void
+PortPickerWidget::OnDetectedNotification() noexcept
+{
+  {
+    const std::lock_guard lock{detected_mutex};
+
+    while (!detected_list.empty()) {
+      UpdateItem(std::move(detected_list.front()));
+      detected_list.pop_front();
+    }
+  }
+
+  // Reload combo list to reflect new devices
+  // This preserves the current selection if it still exists
+  auto &list = GetList();
+  const int old_cursor = list.GetCursorIndex();
+  const int old_value = (old_cursor >= 0 && old_cursor < (int)combo_list.size())
+    ? combo_list[old_cursor].int_value
+    : -1;
+
+  combo_list = df.CreateComboList(nullptr);
+  list.SetLength(combo_list.size());
+
+  // Try to restore the old selection
+  if (old_value >= 0) {
+    int new_cursor = combo_list.Find(old_value);
+    if (new_cursor >= 0) {
+      list.SetCursorIndex(new_cursor);
+    }
+  }
+
+  list.Invalidate();
+}
+
+#endif
 #endif
 
 bool

@@ -138,6 +138,12 @@ Profile::GetDeviceConfig(const ProfileMap &map, unsigned n,
   if (const char *name = make_port_name("BluetoothMAC"); name != nullptr)
     map.Get(name, config.bluetooth_mac);
 
+  if (const char *name = make_port_name("PortName"); name != nullptr)
+    map.Get(name, config.port_name);
+  // If no saved name yet, seed it from the MAC so it's never blank
+  if (config.port_name.empty())
+    config.port_name = config.bluetooth_mac;
+
   if (const char *name = make_port_name("IOIOUartID"); name != nullptr)
     map.Get(name, config.ioio_uart_id);
 
@@ -280,6 +286,9 @@ Profile::SetDeviceConfig(ProfileMap &map,
 
   if (const char *name = make_port_name("BluetoothMAC"); name != nullptr)
     map.Set(name, config.bluetooth_mac);
+
+  if (const char *name = make_port_name("PortName"); name != nullptr)
+    map.Set(name, config.port_name);
 
   if (const char *name = make_port_name("IOIOUartID"); name != nullptr)
     map.Set(name, config.ioio_uart_id);

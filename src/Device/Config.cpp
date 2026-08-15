@@ -32,7 +32,7 @@ DeviceConfig::IsAvailable() const noexcept
   case PortType::RFCOMM_SERVER:
   case PortType::GLIDER_LINK:
   case PortType::ANDROID_USB_SERIAL:
-    return IsAndroid();
+    return IsAndroid() || IsIOS();
 
   case PortType::IOIOUART:
   case PortType::DROIDSOAR_V2:
@@ -209,11 +209,12 @@ DeviceConfig::GetPortName(char *buffer, size_t max_size) const noexcept
     return path.c_str();
 
   case PortType::BLE_SENSOR: {
-    const char *name = bluetooth_mac.c_str();
+    // Prefer saved friendly name, fall back to raw MAC/UUID
+    const char *name = !port_name.empty() ? port_name.c_str() : bluetooth_mac.c_str();
 #ifdef ANDROID
     if (bluetooth_helper != nullptr) {
       const char *name2 =
-        bluetooth_helper->GetNameFromAddress(Java::GetEnv(), name);
+        bluetooth_helper->GetNameFromAddress(Java::GetEnv(), bluetooth_mac.c_str());
       if (name2 != nullptr)
         name = name2;
     }
@@ -225,11 +226,12 @@ DeviceConfig::GetPortName(char *buffer, size_t max_size) const noexcept
     }
 
   case PortType::BLE_SERIAL: {
-    const char *name = bluetooth_mac.c_str();
+    // Prefer saved friendly name, fall back to raw MAC/UUID
+    const char *name = !port_name.empty() ? port_name.c_str() : bluetooth_mac.c_str();
 #ifdef ANDROID
     if (bluetooth_helper != nullptr) {
       const char *name2 =
-        bluetooth_helper->GetNameFromAddress(Java::GetEnv(), name);
+        bluetooth_helper->GetNameFromAddress(Java::GetEnv(), bluetooth_mac.c_str());
       if (name2 != nullptr)
         name = name2;
     }

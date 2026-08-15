@@ -16,11 +16,19 @@
 #include "AndroidUsbSerialPort.hpp"
 #endif
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE
+#include "AppleBluetoothPort.hpp"
+#endif
+#endif
+
 #if defined(HAVE_POSIX)
 #include "TTYPort.hpp"
 #else
 #include "SerialPort.hpp"
 #endif
+
 
 #ifndef NDEBUG
 #include "DumpPort.hpp"

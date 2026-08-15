@@ -92,10 +92,73 @@
         <string>Navigation and flight logging with the in-built GPS sensor.</string>
         <key>NSMotionUsageDescription</key>
         <string>Navigation and flight logging with the in-built barometric altitude sensor.</string>
+        <key>NSBluetoothPeripheralUsageDescription</key>
+        <string>Connect to Bluetooth devices for external sensors and data transfer.</string>
+        <key>NSBluetoothAlwaysUsageDescription</key>
+        <string>Connect to Bluetooth devices for external sensors and data transfer.</string>
         <key>UIFileSharingEnabled</key>
         <true/>
         <key>LSSupportsOpeningDocumentsInPlace</key>
         <true/>
+        <key>CFBundleDocumentTypes</key>
+        <array>
+            <!-- Airspace files: OpenAir .txt/.air, SUA .sua -->
+            <dict>
+                <key>CFBundleTypeName</key>
+                <string>Airspace File</string>
+                <key>LSHandlerRank</key>
+                <string>Alternate</string>
+                <key>CFBundleTypeRole</key>
+                <string>Viewer</string>
+                <key>CFBundleTypeExtensions</key>
+                <array>
+                    <string>txt</string>
+                    <string>air</string>
+                    <string>sua</string>
+                </array>
+                <key>LSItemContentTypes</key>
+                <array>
+                    <string>public.plain-text</string>
+                    <string>public.data</string>
+                </array>
+            </dict>
+            <!-- Waypoint files: SeeYou .cup, Cambridge .dat, Zander .wpz -->
+            <dict>
+                <key>CFBundleTypeName</key>
+                <string>Waypoint File</string>
+                <key>LSHandlerRank</key>
+                <string>Alternate</string>
+                <key>CFBundleTypeRole</key>
+                <string>Viewer</string>
+                <key>CFBundleTypeExtensions</key>
+                <array>
+                    <string>cup</string>
+                    <string>dat</string>
+                    <string>wpz</string>
+                </array>
+                <key>LSItemContentTypes</key>
+                <array>
+                    <string>public.data</string>
+                </array>
+            </dict>
+            <!-- XCSoar Map database .xcm -->
+            <dict>
+                <key>CFBundleTypeName</key>
+                <string>XCSoar Map File</string>
+                <key>LSHandlerRank</key>
+                <string>Owner</string>
+                <key>CFBundleTypeRole</key>
+                <string>Viewer</string>
+                <key>CFBundleTypeExtensions</key>
+                <array>
+                    <string>xcm</string>
+                </array>
+                <key>LSItemContentTypes</key>
+                <array>
+                    <string>public.data</string>
+                </array>
+            </dict>
+        </array>
         <key>UIRequiresFullScreen</key>
         <true/>
         <key>UILaunchStoryboardName</key>

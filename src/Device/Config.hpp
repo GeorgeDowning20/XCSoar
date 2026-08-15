@@ -143,7 +143,7 @@ struct DeviceConfig {
   /**
    * The Bluetooth MAC address of the peer.
    */
-  StaticString<32> bluetooth_mac;
+  StaticString<40> bluetooth_mac; // iOS UUIDs are 36 chars; was 32 which truncated them
 
   /**
    * The IOIO UART ID.
