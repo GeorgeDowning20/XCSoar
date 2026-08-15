@@ -451,6 +451,9 @@ Event list
  * - ``SnailTrail S``
    - Change snail trail setting. Possible arguments: ``off``,
      ``short``, ``long``, ``full``, ``toggle``, ``show``.
+ * - ``SoaringSpot``
+   - Opens the SoaringSpot dialog for downloading competition turn
+     point files, airspace files and tasks.
  * - ``Sounds S``
    - Change vario sounds. Possible arguments: ``toggle``, ``on``,
      ``off``, ``show``.

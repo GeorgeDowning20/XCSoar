@@ -7,6 +7,8 @@ LIBCLIENT_SOURCES = \
 	$(SRC)/net/client/SyncHttp.cpp \
 	$(SRC)/net/client/tim/Client.cpp \
 	$(SRC)/net/client/xctherm/Http.cpp \
+	$(SRC)/net/client/SoaringSpot/Client.cpp \
+	$(SRC)/net/client/SoaringSpot/Parser.cpp \
 	$(SRC)/net/client/WeGlide/AircraftCache.cpp \
 	$(SRC)/net/client/WeGlide/AircraftList.cpp \
 	$(SRC)/net/client/WeGlide/Error.cpp \

@@ -216,6 +216,7 @@ void eventWeather(const char *misc);
 void eventQuickMenu(const char *misc);
 void eventFileManager(const char *misc);
 void eventDataManagement(const char *misc);
+void eventSoaringSpot(const char *misc);
 void eventExportFlights(const char *misc);
 void eventRunLuaFile(const char *misc);
 void eventResetTask(const char *misc);

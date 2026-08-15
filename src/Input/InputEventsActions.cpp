@@ -43,6 +43,7 @@ https://xcsoar.readthedocs.io/en/latest/input_events.html
 #include "Dialogs/Plane/PlaneDialogs.hpp"
 #include "Dialogs/DataManagement/DataManagement.hpp"
 #include "Dialogs/DataManagement/ExportFlightsPanel.hpp"
+#include "Dialogs/SoaringSpot/SoaringSpotDialog.hpp"
 #include "Dialogs/ProfileListDialog.hpp"
 #include "Dialogs/dlgAnalysis.hpp"
 #include "Dialogs/FileManager.hpp"
@@ -798,6 +799,12 @@ void
 InputEvents::eventDataManagement([[maybe_unused]] const char *misc)
 {
   ShowDataManagementDialog();
+}
+
+void
+InputEvents::eventSoaringSpot([[maybe_unused]] const char *misc)
+{
+  ShowSoaringSpotDialog();
 }
 
 void
