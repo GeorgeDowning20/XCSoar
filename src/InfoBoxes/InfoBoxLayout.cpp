@@ -20,6 +20,9 @@ static constexpr unsigned char geometry_counts[] = {
   12, // 3 rows X 4 boxes
   15, // 3 rows X 5 boxes
   18, // 3 rows X 6 boxes
+  16, // SPLIT_16
+  10, // BOTTOM_10_ROW
+  12, // IPAD_12
 };
 
 namespace InfoBoxLayout {
@@ -116,7 +119,7 @@ InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry) noexc
 
   CalcInfoBoxSizes(layout, screen_size, geometry);
 
-  if (!layout.landscape)
+  if (!layout.landscape && geometry != InfoBoxSettings::Geometry::IPAD_12)
     /* free up more vertical space for the map in portrait mode */
     layout.control_size.height = layout.control_size.height * 7 / 10;
 
@@ -411,6 +414,39 @@ InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry) noexc
       rc.bottom = MakeBottomRow(layout, layout.positions, 4,
                                 rc.left, rc.right, rc.bottom);
     break;
+
+  case InfoBoxSettings::Geometry::SPLIT_16:
+    if (layout.landscape) {
+      rc.left = MakeLeftColumn(layout, layout.positions, 8,
+                               rc.left, rc.top, rc.bottom);
+      rc.right = MakeRightColumn(layout, layout.positions + 8, 8,
+                                 rc.right, rc.top, rc.bottom);
+    } else {
+      rc.top = MakeTopRow(layout, layout.positions, 8,
+                          rc.left, rc.right, rc.top);
+      rc.bottom = MakeBottomRow(layout, layout.positions + 8, 8,
+                                rc.left, rc.right, rc.bottom);
+    }
+
+    break;
+
+  case InfoBoxSettings::Geometry::BOTTOM_10_ROW:
+    rc.bottom = MakeBottomRow(layout, layout.positions, 10,
+                              rc.left, rc.right, rc.bottom);
+    break;
+
+  case InfoBoxSettings::Geometry::IPAD_12:
+    if (layout.landscape) {
+      rc.bottom = MakeBottomRow(layout, layout.positions, 12,
+                                rc.left, rc.right, rc.bottom);
+    } else {
+      rc.bottom = MakeBottomRow(layout, layout.positions + 6, 6,
+                                rc.left, rc.right, rc.bottom);
+      rc.bottom = MakeBottomRow(layout, layout.positions, 6,
+                                rc.left, rc.right, rc.bottom);
+    }
+
+    break;
   };
 
   layout.remaining = rc;
@@ -450,6 +486,9 @@ InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
     case InfoBoxSettings::Geometry::TOP_LEFT_10:
     case InfoBoxSettings::Geometry::LEFT_6_RIGHT_3_VARIO:
     case InfoBoxSettings::Geometry::LEFT_12_RIGHT_3_VARIO:
+    case InfoBoxSettings::Geometry::SPLIT_16:
+    case InfoBoxSettings::Geometry::BOTTOM_10_ROW:
+    case InfoBoxSettings::Geometry::IPAD_12:
       break;
 
     case InfoBoxSettings::Geometry::BOTTOM_8_VARIO:
@@ -502,6 +541,11 @@ InfoBoxLayout::ValidateGeometry(InfoBoxSettings::Geometry geometry,
 
     case InfoBoxSettings::Geometry::LEFT_12_RIGHT_3_VARIO:
       return InfoBoxSettings::Geometry::BOTTOM_8_VARIO;
+
+    case InfoBoxSettings::Geometry::SPLIT_16:
+    case InfoBoxSettings::Geometry::BOTTOM_10_ROW:
+    case InfoBoxSettings::Geometry::IPAD_12:
+      break;
 
     case InfoBoxSettings::Geometry::BOTTOM_8_VARIO:
     case InfoBoxSettings::Geometry::TOP_LEFT_4:
@@ -588,6 +632,42 @@ InfoBoxLayout::CalcInfoBoxSizes(Layout &layout, PixelSize screen_size,
                                                              layout.control_size.width);
     }
 
+    break;
+
+  case InfoBoxSettings::Geometry::SPLIT_16:
+    if (landscape) {
+      layout.control_size.height = 2 * screen_size.height / layout.count;
+      layout.control_size.width = CalculateInfoBoxColumnWidth(screen_size.width,
+                                                              layout.control_size.height);
+    } else {
+      layout.control_size.width = 2 * screen_size.width / layout.count;
+      layout.control_size.height = CalculateInfoBoxRowHeight(screen_size.height,
+                                                             layout.control_size.width);
+    }
+
+    break;
+
+  case InfoBoxSettings::Geometry::BOTTOM_10_ROW:
+    layout.control_size.width = screen_size.width / layout.count;
+    layout.control_size.height = CalculateInfoBoxRowHeight(screen_size.height,
+                                                           layout.control_size.width);
+    break;
+
+  case InfoBoxSettings::Geometry::IPAD_12:
+    if (landscape) {
+      /* single row of 12; squish the row height to 7/10, since
+         landscape doesn't get the automatic portrait squish below */
+      layout.control_size.width = screen_size.width / layout.count;
+      layout.control_size.height = CalculateInfoBoxRowHeight(screen_size.height,
+                                                             layout.control_size.width)
+        * 7 / 10;
+    } else {
+      /* 2 rows of 6; squished to 6/10 (not the usual portrait 7/10) */
+      layout.control_size.width = screen_size.width / 6;
+      layout.control_size.height = CalculateInfoBoxRowHeight(screen_size.height,
+                                                             layout.control_size.width)
+        * 6 / 10;
+    }
     break;
 
   case InfoBoxSettings::Geometry::BOTTOM_8_VARIO:
@@ -907,6 +987,48 @@ InfoBoxLayout::GetBorder(InfoBoxSettings::Geometry geometry, bool landscape,
       if (i != 7 && i != 15 && i != 23)
         border |= BORDERRIGHT;
     }
+    break;
+
+  case InfoBoxSettings::Geometry::SPLIT_16:
+    if (landscape) {
+      if (i != 7 && i != 15)
+        border |= BORDERBOTTOM;
+
+      if (i < 8)
+        border |= BORDERRIGHT;
+      else
+        border |= BORDERLEFT;
+    } else {
+      if (i < 8)
+        border |= BORDERBOTTOM;
+      else
+        border |= BORDERTOP;
+
+      if (i != 7 && i != 15)
+        border |= BORDERRIGHT;
+    }
+
+    break;
+
+  case InfoBoxSettings::Geometry::BOTTOM_10_ROW:
+    border |= BORDERTOP;
+
+    if (i != 9)
+      border |= BORDERRIGHT;
+
+    break;
+
+  case InfoBoxSettings::Geometry::IPAD_12:
+    border |= BORDERTOP;
+
+    if (landscape) {
+      if (i != 11)
+        border |= BORDERRIGHT;
+    } else {
+      if (i != 5 && i != 11)
+        border |= BORDERRIGHT;
+    }
+
     break;
 
   case InfoBoxSettings::Geometry::OBSOLETE_SPLIT_8:

@@ -113,6 +113,9 @@ Profile::Load(const ProfileMap &map, InfoBoxSettings &settings)
     break;
 
   case InfoBoxSettings::Geometry::TOP_8_VARIO:
+  case InfoBoxSettings::Geometry::SPLIT_16:
+  case InfoBoxSettings::Geometry::BOTTOM_10_ROW:
+  case InfoBoxSettings::Geometry::IPAD_12:
     break;
   }
 

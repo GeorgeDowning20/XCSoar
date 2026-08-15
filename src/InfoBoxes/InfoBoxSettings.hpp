@@ -107,6 +107,17 @@ struct InfoBoxSettings {
     /** 18 infoboxes 3X6 split bottom/top or left/right */
     SPLIT_3X6 = 26,
 
+    /** 16 infoboxes split bottom/top or left/right (8 each side) */
+    SPLIT_16 = 27,
+    /** 10 infoboxes in a single row along the bottom (landscape) */
+    BOTTOM_10_ROW = 28,
+    /**
+     * 12 infoboxes at the bottom: a single row of 12 (landscape) or
+     * 2 rows of 6 (portrait).  The row height is always squished to
+     * 7/10 of the normal size, in both orientations.
+     */
+    IPAD_12 = 29,
+
   } geometry;
 
 /*
