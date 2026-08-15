@@ -113,6 +113,9 @@ SyncCachedForecastImage(std::string_view region,
 
 #ifdef ENABLE_OPENGL
 
+/** Hide the SkySight overlay once zoomed in closer than this scale bar reading (m). */
+constexpr double MIN_OVERLAY_MAP_SCALE = 1000;
+
 struct PrioritizedTile {
   GeoBitmap::TileData tile;
   unsigned priority;
@@ -1052,6 +1055,15 @@ SkySightClient::DisplayForecastLayer()
   if (map_window == nullptr || active_layer == nullptr)
     return false;
 
+  if (map_window->VisibleProjection().GetMapScale() < MIN_OVERLAY_MAP_SCALE) {
+    if (!tile_filenames[0].empty()) {
+      map_window->SetOverlay(0, nullptr);
+      tile_filenames[0].clear();
+    }
+    forecast_image_dirty = true;
+    return false;
+  }
+
   if (displayed_layer != active_layer) {
     ResetTiles();
     displayed_layer = active_layer;
@@ -1116,6 +1128,21 @@ SkySightClient::DisplayTileLayer()
   auto *map_window = UIGlobals::GetMapIfActive();
   if (map_window == nullptr || active_layer == nullptr)
     return false;
+
+  if (map_window->VisibleProjection().GetMapScale() < MIN_OVERLAY_MAP_SCALE) {
+    for (std::size_t i = 0; i < tile_filenames.size(); ++i) {
+      if (!tile_filenames[i].empty()) {
+        map_window->SetOverlay(i, nullptr);
+        tile_filenames[i].clear();
+      }
+      tile_coordinates[i] = {};
+      tile_timestamps[i] = 0;
+    }
+    /* force a full recompute once zoomed back out */
+    planned_live_bounds.SetInvalid();
+    planned_live_tiles.clear();
+    return false;
+  }
 
   const auto map_tile = GeoBitmap::GetTile(map_window->VisibleProjection(),
                                            active_layer->zoom_min,
