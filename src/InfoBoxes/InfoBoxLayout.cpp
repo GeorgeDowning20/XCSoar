@@ -118,7 +118,7 @@ InfoBoxLayout::Calculate(PixelRect rc, InfoBoxSettings::Geometry geometry) noexc
 
   if (!layout.landscape)
     /* free up more vertical space for the map in portrait mode */
-    layout.control_size.height = layout.control_size.height * 4 / 5;
+    layout.control_size.height = layout.control_size.height * 7 / 10;
 
   layout.ClearVario();
 
