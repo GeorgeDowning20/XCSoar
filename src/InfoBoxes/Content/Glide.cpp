@@ -61,6 +61,25 @@ UpdateInfoBoxGRAvg(InfoBoxData &data) noexcept
 }
 
 void
+UpdateInfoBoxGRAvgTE(InfoBoxData &data) noexcept
+{
+  const auto average_gr_te = CommonInterface::Calculated().average_gr_te;
+
+  if (average_gr_te == 0) {
+    data.SetInvalid();
+    return;
+  }
+
+  // Set Value
+  if (average_gr_te < 0)
+    data.SetValue("^^^");
+  else if (!::GradientValid(average_gr_te))
+    data.SetValue("+++");
+  else
+    data.SetValueFromGlideRatio(average_gr_te);
+}
+
+void
 UpdateInfoBoxLDVario(InfoBoxData &data) noexcept
 {
   const auto ld_vario = CommonInterface::Calculated().ld_vario;

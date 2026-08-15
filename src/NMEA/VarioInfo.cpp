@@ -11,6 +11,7 @@ VarioInfo::Clear()
   average = netto_average = 0;
   cruise_gr = INVALID_GR;
   average_gr = 0;
+  average_gr_te = 0;
   gr = INVALID_GR;
   ld_vario = INVALID_GR;
 

@@ -13,8 +13,10 @@ struct VarioInfo;
 
 class GlideRatioComputer {
   bool gr_calculator_initialised;
+  bool gr_te_calculator_initialised;
 
   GlideRatioCalculator gr_calculator;
+  GlideRatioCalculator gr_te_calculator;
 
   GeoPoint last_location;
   double last_altitude;

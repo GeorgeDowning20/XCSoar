@@ -15,4 +15,7 @@ void
 UpdateInfoBoxGRAvg(InfoBoxData &data) noexcept;
 
 void
+UpdateInfoBoxGRAvgTE(InfoBoxData &data) noexcept;
+
+void
 UpdateInfoBoxLDVario(InfoBoxData &data) noexcept;

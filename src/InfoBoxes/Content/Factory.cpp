@@ -1211,6 +1211,14 @@ static constexpr MetaData meta_data[] = {
     IBFHelper<InfoBoxContentPreviousWaypoint>::Create,
   },
 
+  // e_GR_Avg_TE
+  {
+    N_("GR average TE"),
+    N_("GR Avg TE"),
+    N_("Distance flown during the configured averaging period divided by the total-energy-compensated altitude lost during that period (i.e. altitude loss adjusted for changes in kinetic energy/airspeed). Negative values are shown as ^^^ and indicate climbing cruise (height gain). For GR >200, the value is shown as +++. You can configure the averaging period in the system setup (suggested: 60, 90 or 120s). Note: The distance is not the straight line between your previous and current positions; it is the actual path distance flown (including zigzags). This value is not calculated while circling."),
+    UpdateInfoBoxGRAvgTE,
+  },
+
 };
 
 static_assert(ARRAY_SIZE(meta_data) == NUM_TYPES,

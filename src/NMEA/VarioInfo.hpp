@@ -27,6 +27,13 @@ struct VarioInfo
    */
   double average_gr;
 
+  /**
+   * Average glide ratio over ground, compensated for total energy
+   * (i.e. based on TE_altitude instead of nav_altitude).  Zero means
+   * the value is not available.
+   */
+  double average_gr_te;
+
   /** Instant lift/drag ratio */
   double ld_vario;
 

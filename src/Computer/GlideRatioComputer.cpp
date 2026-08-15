@@ -9,6 +9,7 @@ void
 GlideRatioComputer::Reset()
 {
   gr_calculator_initialised = false;
+  gr_te_calculator_initialised = false;
   last_location_available.Clear();
 }
 
@@ -22,6 +23,7 @@ GlideRatioComputer::Compute(const MoreData &basic,
     Reset();
     vario_info.gr = INVALID_GR;
     vario_info.average_gr = 0;
+    vario_info.average_gr_te = 0;
     return;
   }
 
@@ -31,6 +33,7 @@ GlideRatioComputer::Compute(const MoreData &basic,
     Reset();
     vario_info.gr = INVALID_GR;
     vario_info.average_gr = 0;
+    vario_info.average_gr_te = 0;
 
     last_location = basic.location;
     last_location_available = basic.location_available;
@@ -56,8 +59,18 @@ GlideRatioComputer::Compute(const MoreData &basic,
 
     gr_calculator.Add((int)DistanceFlown, (int)basic.nav_altitude);
     vario_info.average_gr = gr_calculator.Calculate();
-  } else
+
+    if (!gr_te_calculator_initialised) {
+      gr_te_calculator_initialised = true;
+      gr_te_calculator.Initialize(settings);
+    }
+
+    gr_te_calculator.Add((int)DistanceFlown, (int)basic.TE_altitude);
+    vario_info.average_gr_te = gr_te_calculator.Calculate();
+  } else {
     gr_calculator_initialised = false;
+    gr_te_calculator_initialised = false;
+  }
 
   last_location = basic.location;
   last_location_available = basic.location_available;
