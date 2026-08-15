@@ -241,6 +241,14 @@ static constexpr MetaData meta_data[] = {
     UpdateInfoBoxFinalAltitudeDiff,
   },
 
+  // e_SpeedEstimated
+  {
+    N_("Speed estimated"),
+    N_("V Est"),
+    N_("Average speed calculated from the current MacCready setting and glide polar."),
+    UpdateInfoBoxSpeedEstimated,
+  },
+
   // e_Fin_AltReq
   {
     N_("Final altitude required"),
@@ -604,9 +612,9 @@ static constexpr MetaData meta_data[] = {
 
   // e_CC_Speed
   {
-    N_("Speed task achieved"),
+    N_("Speed task achieved (Pirker)"),
     N_("V Task Ach"),
-    N_("Achieved cross-country speed while on current task, compensated for altitude. Equivalent to Pirker cross-country speed remaining."),
+    N_("Achieved cross-country speed while on the current task, compensated for altitude using the current MacCready setting and glide polar. Equivalent to Pirker cross-country speed."),
     UpdateInfoBoxTaskSpeedAchieved,
   },
 

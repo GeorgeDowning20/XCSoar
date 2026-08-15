@@ -559,6 +559,19 @@ UpdateInfoBoxTaskSpeedEst(InfoBoxData &data) noexcept
 }
 
 void
+UpdateInfoBoxSpeedEstimated(InfoBoxData &data) noexcept
+{
+  const auto &glide_polar =
+    CommonInterface::GetComputerSettings().polar.glide_polar_task;
+  if (!glide_polar.IsValid()) {
+    data.SetInvalid();
+    return;
+  }
+
+  data.SetValueFromTaskSpeed(glide_polar.GetAverageSpeed());
+}
+
+void
 UpdateInfoBoxFinalGR(InfoBoxData &data) noexcept
 {
   const TaskStats &task_stats = CommonInterface::Calculated().task_stats;

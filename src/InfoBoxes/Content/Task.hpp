@@ -207,6 +207,9 @@ void
 UpdateInfoBoxTaskSpeedEst(InfoBoxData &data) noexcept;
 
 void
+UpdateInfoBoxSpeedEstimated(InfoBoxData &data) noexcept;
+
+void
 UpdateInfoBoxTaskAATime(InfoBoxData &data) noexcept;
 
 void
