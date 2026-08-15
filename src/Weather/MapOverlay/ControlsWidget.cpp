@@ -34,8 +34,9 @@ NotifyLiveCursorChange() noexcept
   RefreshControlsLabels();
 }
 
-ControlsWidget::ControlsWidget(std::unique_ptr<ControlsModel> _model) noexcept
-  :CursorBarWidget(2),
+ControlsWidget::ControlsWidget(std::unique_ptr<ControlsModel> _model,
+                               float height_scale) noexcept
+  :CursorBarWidget(2, height_scale),
    model(std::move(_model))
 {
   assert(model != nullptr);

@@ -6,6 +6,7 @@
 #include "UIState.hpp"
 #include "Interface.hpp"
 #include "ActionInterface.hpp"
+#include "Asset.hpp"
 #include "MainWindow.hpp"
 #include "util/ScopeExit.hxx"
 #include "CrossSection/CrossSectionWidget.hpp"
@@ -557,8 +558,14 @@ LoadBottom(const PageLayout &layout)
 
   case PageLayout::Bottom::WEATHER_CONTROLS:
     if (auto model = WeatherMapOverlay::CreateControlsModel(layout)) {
+      /* SkySight's touch-sized bar is oversized on Apple's larger
+         default control height; halve it there. */
+      const float height_scale =
+        (layout.overlay == PageLayout::Overlay::SKYSIGHT && IsApple())
+        ? 0.5f : 1.0f;
       CommonInterface::main_window->SetBottomWidget(
-        new WeatherMapOverlay::ControlsWidget(std::move(model)));
+        new WeatherMapOverlay::ControlsWidget(std::move(model),
+                                              height_scale));
       break;
     }
     CommonInterface::main_window->SetBottomWidget(nullptr);

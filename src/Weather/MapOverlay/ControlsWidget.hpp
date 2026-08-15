@@ -53,7 +53,12 @@ class ControlsWidget final : public CursorBarWidget,
   void OpenSecondaryPicker() noexcept;
 
 public:
-  explicit ControlsWidget(std::unique_ptr<ControlsModel> _model) noexcept;
+  /**
+   * @param height_scale Multiplier applied to the bar's default height,
+   * e.g. 0.5f to halve it for a specific overlay/platform.
+   */
+  explicit ControlsWidget(std::unique_ptr<ControlsModel> _model,
+                         float height_scale=1.0f) noexcept;
   ~ControlsWidget() noexcept override;
 
   ControlsWidget(const ControlsWidget &) = delete;

@@ -23,8 +23,11 @@ public:
 
   /**
    * @param row_count Number of stepper rows (1..#MAX_ROWS).
+   * @param height_scale Multiplier applied to #DefaultHeight, e.g. to
+   * shrink an overlay's bar on a specific platform.
    */
-  explicit CursorBarWidget(unsigned row_count=2) noexcept;
+  explicit CursorBarWidget(unsigned row_count=2,
+                          float height_scale=1.0f) noexcept;
 
   void SetStepCallback(StepCallback cb) noexcept {
     step_callback = std::move(cb);
@@ -51,6 +54,12 @@ public:
   [[gnu::const]]
   static unsigned DefaultHeight(unsigned row_count=2) noexcept;
 
+  /**
+   * #DefaultHeight for this instance's row count, scaled by #height_scale.
+   */
+  [[gnu::pure]]
+  unsigned GetPreferredHeight() const noexcept;
+
   /* virtual methods from class Widget */
   PixelSize GetMinimumSize() const noexcept override;
   PixelSize GetMaximumSize() const noexcept override;
@@ -68,6 +77,7 @@ private:
   class BarWindow;
 
   const unsigned row_count;
+  const float height_scale;
   StepCallback step_callback;
   LabelClickCallback label_click_callback;
 };

@@ -99,13 +99,13 @@ class CursorBarWidget::BarWindow final : public SolidContainerWindow {
     return int(Layout::GetMinimumControlHeight()) * 2;
   }
 
-  static void
+  void
   ComputeLayout(const PixelRect &rc, unsigned rows,
-                int &total_h, int &row_h, int &btn_w, int &w) noexcept
+                int &total_h, int &row_h, int &btn_w, int &w) const noexcept
   {
     w = std::max(1, (int)rc.GetWidth());
     const unsigned separators = rows > 1 ? rows - 1 : 0;
-    const unsigned preferred_h = CursorBarWidget::DefaultHeight(rows);
+    const unsigned preferred_h = owner.GetPreferredHeight();
     total_h = std::max(int(SEPARATOR_H) + 2,
                        std::min((int)rc.GetHeight(), (int)preferred_h));
     row_h = std::max(1, (total_h - int(separators) * SEPARATOR_H)
@@ -238,8 +238,8 @@ protected:
   }
 };
 
-CursorBarWidget::CursorBarWidget(unsigned _row_count) noexcept
-  :row_count(std::clamp(_row_count, 1U, MAX_ROWS)) {}
+CursorBarWidget::CursorBarWidget(unsigned _row_count, float _height_scale) noexcept
+  :row_count(std::clamp(_row_count, 1U, MAX_ROWS)), height_scale(_height_scale) {}
 
 unsigned
 CursorBarWidget::DefaultHeight(unsigned rows) noexcept
@@ -252,16 +252,22 @@ CursorBarWidget::DefaultHeight(unsigned rows) noexcept
   return row_h * rows + separators * SEPARATOR_H;
 }
 
+unsigned
+CursorBarWidget::GetPreferredHeight() const noexcept
+{
+  return (unsigned)(DefaultHeight(row_count) * height_scale + 0.5f);
+}
+
 PixelSize
 CursorBarWidget::GetMinimumSize() const noexcept
 {
-  return {100U, DefaultHeight(row_count)};
+  return {100U, GetPreferredHeight()};
 }
 
 PixelSize
 CursorBarWidget::GetMaximumSize() const noexcept
 {
-  return {4096U, DefaultHeight(row_count)};
+  return {4096U, GetPreferredHeight()};
 }
 
 void
