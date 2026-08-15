@@ -1219,6 +1219,14 @@ static constexpr MetaData meta_data[] = {
     UpdateInfoBoxGRAvgTE,
   },
 
+  // e_Fin_AltDiff_TE
+  {
+    N_("Final altitude difference TE"),
+    N_("Fin AltD TE"),
+    N_("Arrival altitude at the final task turn point relative to the safety arrival height, compensated for total energy. Adds the excess kinetic energy currently carried (based on true airspeed) above what MacCready theory assumes you will have when arriving at the current MacCready speed-to-fly. Requires airspeed to be available."),
+    UpdateInfoBoxFinalAltitudeDiffTE,
+  },
+
 };
 
 static_assert(ARRAY_SIZE(meta_data) == NUM_TYPES,

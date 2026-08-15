@@ -177,6 +177,9 @@ void
 UpdateInfoBoxFinalAltitudeDiff(InfoBoxData &data) noexcept;
 
 void
+UpdateInfoBoxFinalAltitudeDiffTE(InfoBoxData &data) noexcept;
+
+void
 UpdateInfoBoxFinalMC0AltitudeDiff(InfoBoxData &data) noexcept;
 
 void

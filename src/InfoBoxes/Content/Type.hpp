@@ -156,6 +156,7 @@ namespace InfoBoxFactory
     e_ActiveWaypoint, /* Active waypoint infobox: shows the current task's next waypoint name (or Goto waypoint if no task), arrival altitude diff, and distance */
     e_PreviousWaypoint, /* Previous waypoint infobox: shows the task waypoint before the active leg (start when on the first leg) with arrival altitude diff and distance; selection is informational only and never advances the task or sets a Goto */
     e_GR_Avg_TE, /* Average glide ratio over ground during the configured averaging period, compensated for total energy (kinetic energy changes) in addition to altitude lost */
+    e_Fin_AltDiff_TE, /* Arrival altitude at the final task turn point relative to the safety arrival height, compensated for total energy: adds the excess kinetic energy above what is assumed for arrival at the current MacCready speed-to-fly */
     e_NUM_TYPES /* Last item */
   };
 

@@ -22,6 +22,8 @@
 #include "BackendComponents.hpp"
 #include "DataComponents.hpp"
 #include "Geo/GeoVector.hpp"
+#include "Geo/Gravity.hpp"
+#include "Math/Util.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -417,6 +419,36 @@ UpdateInfoBoxFinalAltitudeDiff(InfoBoxData &data) noexcept
   const TaskStats &task_stats = CommonInterface::Calculated().task_stats;
 
   SetValueFromAltDiff(data, task_stats, task_stats.total.solution_remaining);
+}
+
+void
+UpdateInfoBoxFinalAltitudeDiffTE(InfoBoxData &data) noexcept
+{
+  const TaskStats &task_stats = CommonInterface::Calculated().task_stats;
+  const GlideResult &solution = task_stats.total.solution_remaining;
+
+  if (!task_stats.task_valid || !solution.IsAchievable()) {
+    data.SetInvalid();
+    return;
+  }
+
+  const auto &basic = CommonInterface::Basic();
+  if (!basic.airspeed_available) {
+    data.SetInvalid();
+    return;
+  }
+
+  const auto &settings = CommonInterface::GetComputerSettings();
+  const auto altitude_difference =
+    solution.SelectAltitudeDifference(settings.task.glide);
+
+  /* add the excess kinetic energy currently carried above what is
+     assumed for arrival at the MacCready cruise speed-to-fly */
+  const auto arrival_energy_height = Square(solution.v_opt) / (2 * GRAVITY);
+  const auto te_altitude_difference =
+    altitude_difference + basic.energy_height - arrival_energy_height;
+
+  data.SetValueFromArrival(te_altitude_difference);
 }
 
 void
