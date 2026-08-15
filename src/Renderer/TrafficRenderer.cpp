@@ -44,9 +44,9 @@ MapTrafficScaleFromIconSize(unsigned icon_size) noexcept
 
 [[gnu::pure]]
 static MapTrafficScale
-GetMapTrafficScale() noexcept
+GetMapTrafficScale(unsigned scale_percent) noexcept
 {
-  return MapTrafficScaleFromIconSize(Layout::VptScale(MAP_TRAFFIC_ICON_VPT));
+  return MapTrafficScaleFromIconSize(TrafficRenderer::MapIconSize(scale_percent));
 }
 
 static void
@@ -126,15 +126,15 @@ DrawFlarmArrow(Canvas &canvas, const TrafficLook &traffic_look,
 }
 
 unsigned
-TrafficRenderer::MapIconSize() noexcept
+TrafficRenderer::MapIconSize(unsigned scale_percent) noexcept
 {
-  return Layout::VptScale(MAP_TRAFFIC_ICON_VPT);
+  return Layout::VptScale(MAP_TRAFFIC_ICON_VPT) * scale_percent / 100;
 }
 
 TrafficRenderer::MapTrafficLabelLayout
-TrafficRenderer::MapLabelLayout() noexcept
+TrafficRenderer::MapLabelLayout(unsigned scale_percent) noexcept
 {
-  const unsigned icon_size = MapIconSize();
+  const unsigned icon_size = MapIconSize(scale_percent);
   const int half = int(icon_size) / 2;
 
   return {
@@ -149,9 +149,10 @@ void
 TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
                       bool fading,
                       const FlarmTraffic &traffic, const Angle angle,
-                      const FlarmColor color, const PixelPoint pt) noexcept
+                      const FlarmColor color, const PixelPoint pt,
+                      unsigned scale_percent) noexcept
 {
-  const MapTrafficScale scale = GetMapTrafficScale();
+  const MapTrafficScale scale = GetMapTrafficScale(scale_percent);
   DrawFlarmArrow(canvas, traffic_look, fading, traffic, angle, color, pt,
                  scale.arrow_scale, scale.circle_radius);
 }
@@ -171,7 +172,8 @@ TrafficRenderer::DrawList(Canvas &canvas, const TrafficLook &traffic_look,
 void
 TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
                       [[maybe_unused]] const GliderLinkTraffic &traffic,
-                      const Angle angle, const PixelPoint pt) noexcept
+                      const Angle angle, const PixelPoint pt,
+                      unsigned scale_percent) noexcept
 {
   BulkPixelPoint arrow[] = {
     { -4, 6 },
@@ -187,7 +189,7 @@ TrafficRenderer::Draw(Canvas &canvas, const TrafficLook &traffic_look,
   else
     canvas.SelectBlackPen();
 
-  const MapTrafficScale scale = GetMapTrafficScale();
+  const MapTrafficScale scale = GetMapTrafficScale(scale_percent);
   PolygonRotateShift(arrow, pt, angle, scale.arrow_scale);
   canvas.DrawPolygon(arrow, ARRAY_SIZE(arrow));
 

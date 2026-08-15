@@ -19,7 +19,8 @@ DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
                  const TrafficLook &look, bool fading,
                  const PixelPoint aircraft_pos,
                  const FlarmTraffic &traffic,
-                 DisplayOnlineTrafficMapMode online_mode) noexcept
+                 DisplayOnlineTrafficMapMode online_mode,
+                 unsigned scale_percent) noexcept
 {
   assert(traffic.location_available);
 
@@ -40,7 +41,7 @@ DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
 
   // only draw labels if not close to aircraft
   const TrafficRenderer::MapTrafficLabelLayout layout =
-    TrafficRenderer::MapLabelLayout();
+    TrafficRenderer::MapLabelLayout(scale_percent);
   if ((sc - aircraft_pos).MagnitudeSquared() >
       layout.min_label_distance * layout.min_label_distance) {
     const bool show_name = traffic.HasName() && !StringIsEmpty(traffic.name) &&
@@ -70,7 +71,7 @@ DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
 
   TrafficRenderer::Draw(canvas, look, fading, traffic,
                         traffic.track - projection.GetScreenAngle(),
-                        color, sc);
+                        color, sc, scale_percent);
 }
 
 /**
@@ -100,6 +101,7 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
 
   const DisplayOnlineTrafficMapMode online_mode =
     GetMapSettings().online_traffic_map_mode;
+  const unsigned scale_percent = (unsigned)GetMapSettings().traffic_icon_scale;
 
   // Circle through the traffic targets
   for (const auto &traffic : flarm.list) {
@@ -118,7 +120,7 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
     if (traffic.absolute_location ||
         traffic.relative_north != 0 || traffic.relative_east != 0)
       DrawFlarmTraffic(canvas, projection, traffic_look, false,
-                       aircraft_pos, traffic, online_mode);
+                       aircraft_pos, traffic, online_mode, scale_percent);
   }
 
   if (const auto &fading = GetFadingFlarmTraffic(); !fading.empty()) {
@@ -132,7 +134,7 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
       if (traffic.absolute_location ||
           traffic.relative_north != 0 || traffic.relative_east != 0)
         DrawFlarmTraffic(canvas, projection, traffic_look, true,
-                         aircraft_pos, traffic, online_mode);
+                         aircraft_pos, traffic, online_mode, scale_percent);
     }
   }
 }
@@ -221,7 +223,8 @@ MapWindow::DrawGLinkTraffic([[maybe_unused]] Canvas &canvas) const noexcept
     }
 
     TrafficRenderer::Draw(canvas, traffic_look, traf,
-                          traf.track - projection.GetScreenAngle(), sc);
+                          traf.track - projection.GetScreenAngle(), sc,
+                          (unsigned)GetMapSettings().traffic_icon_scale);
   }
 #endif
 }

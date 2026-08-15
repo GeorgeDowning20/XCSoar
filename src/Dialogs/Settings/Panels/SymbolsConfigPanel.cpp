@@ -15,12 +15,14 @@ enum ControlIndex {
   DISPLAY_TRACK_BEARING,
   ENABLE_FLARM_MAP,
   FADE_TRAFFIC,
+  TRAFFIC_ICON_SCALE,
   TRAIL_LENGTH,
   TRAIL_DRIFT,
   TRAIL_TYPE,
   TRAIL_WIDTH,
   ENABLE_DETOUR_COST_MARKERS,
   AIRCRAFT_SYMBOL,
+  AIRCRAFT_ICON_SCALE,
   WIND_ARROW_STYLE,
   SKYLINES_TRAFFIC_MAP_MODE,
   DISTANCE_RINGS_ENABLED,
@@ -142,6 +144,12 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
   AddBoolean(_("Fade traffic"), _("Keep showing traffic for a while after it has disappeared."),
              settings_map.fade_traffic);
 
+  AddInteger(_("Traffic icon size"),
+             _("Size of FLARM/GliderLink traffic symbols on the map as a "
+               "percentage of the default size."),
+             "%u %%", "%u", 50, 200, 10, settings_map.traffic_icon_scale);
+  SetExpertRow(TRAFFIC_ICON_SCALE);
+
   AddEnum(_("Trail length"),
           _("Determines whether and how long a snail trail is drawn behind the glider."),
           trail_length_list,
@@ -175,6 +183,12 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
           (unsigned)settings_map.aircraft_symbol);
   SetExpertRow(AIRCRAFT_SYMBOL);
 
+  AddInteger(_("Aircraft icon size"),
+             _("Size of the own-ship aircraft symbol on the map as a "
+               "percentage of the default size."),
+             "%u %%", "%u", 50, 200, 10, settings_map.aircraft_icon_scale);
+  SetExpertRow(AIRCRAFT_ICON_SCALE);
+
   AddEnum(_("Wind arrow"), _("Determines the way the wind arrow is drawn on the map."),
           wind_arrow_list, (unsigned)settings_map.wind_arrow_style);
   SetExpertRow(WIND_ARROW_STYLE);
@@ -207,6 +221,9 @@ SymbolsConfigPanel::Save(bool &_changed) noexcept
   changed |= SaveValue(FADE_TRAFFIC, ProfileKeys::FadeTraffic,
                        settings_map.fade_traffic);
 
+  changed |= SaveValueInteger(TRAFFIC_ICON_SCALE, ProfileKeys::TrafficIconScale,
+                              settings_map.traffic_icon_scale);
+
   changed |= SaveValueEnum(TRAIL_LENGTH, ProfileKeys::SnailTrail, settings_map.trail.length);
 
   changed |= SaveValue(TRAIL_DRIFT, ProfileKeys::TrailDrift, settings_map.trail.wind_drift_enabled);
@@ -220,6 +237,9 @@ SymbolsConfigPanel::Save(bool &_changed) noexcept
                        settings_map.detour_cost_markers_enabled);
 
   changed |= SaveValueEnum(AIRCRAFT_SYMBOL, ProfileKeys::AircraftSymbol, settings_map.aircraft_symbol);
+
+  changed |= SaveValueInteger(AIRCRAFT_ICON_SCALE, ProfileKeys::AircraftIconScale,
+                              settings_map.aircraft_icon_scale);
 
   changed |= SaveValueEnum(WIND_ARROW_STYLE, ProfileKeys::WindArrowStyle, settings_map.wind_arrow_style);
 

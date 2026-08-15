@@ -27,6 +27,7 @@ MapSettings::SetDefaults() noexcept
   topography_enabled = true;
   terrain.SetDefaults();
   aircraft_symbol = AircraftSymbol::SIMPLE;
+  aircraft_icon_scale = 100;
   detour_cost_markers_enabled = false;
   display_ground_track = DisplayGroundTrack::AUTO;
   auto_zoom_enabled = false;
@@ -42,6 +43,7 @@ MapSettings::SetDefaults() noexcept
   show_flarm_on_map = true;
   show_flarm_alarm_level = true;
   fade_traffic = true;
+  traffic_icon_scale = 100;
   show_thermal_profile = true;
   distance_rings_enabled = false;
   final_glide_bar_mc0_enabled = true;

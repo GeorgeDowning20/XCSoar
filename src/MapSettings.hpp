@@ -120,6 +120,12 @@ struct MapSettings {
 
   AircraftSymbol aircraft_symbol;
 
+  /**
+   * Own-ship aircraft symbol size in percent of the default size
+   * (50-200; Configuration -> Map display -> Symbols).
+   */
+  int aircraft_icon_scale;
+
   /** Indicate extra distance reqd. if deviating from target heading */
   bool detour_cost_markers_enabled;
   /** Render track bearing on map */
@@ -161,6 +167,12 @@ struct MapSettings {
    * Keep showing traffic for a while after it has disappeared?
    */
   bool fade_traffic;
+
+  /**
+   * Map FLARM/GliderLink traffic symbol size in percent of the default
+   * size (50-200; Configuration -> Map display -> Symbols).
+   */
+  int traffic_icon_scale;
 
   /** Display climb band on map */
   bool show_thermal_profile;

@@ -45,6 +45,7 @@ Profile::Load(const ProfileMap &map, MapSettings &settings)
   LoadTerrainRendererSettings(map, settings.terrain);
 
   map.GetEnum(ProfileKeys::AircraftSymbol, settings.aircraft_symbol);
+  map.Get(ProfileKeys::AircraftIconScale, settings.aircraft_icon_scale);
 
   map.Get(ProfileKeys::DetourCostMarker, settings.detour_cost_markers_enabled);
   map.GetEnum(ProfileKeys::DisplayTrackBearing, settings.display_ground_track);
@@ -118,6 +119,7 @@ Profile::Load(const ProfileMap &map, MapSettings &settings)
   map.GetEnum(ProfileKeys::MapShiftBias, settings.map_shift_bias);
   map.Get(ProfileKeys::EnableFLARMMap, settings.show_flarm_on_map);
   map.Get(ProfileKeys::FadeTraffic, settings.fade_traffic);
+  map.Get(ProfileKeys::TrafficIconScale, settings.traffic_icon_scale);
 
   map.Get(ProfileKeys::EnableThermalProfile, settings.show_thermal_profile);
   map.Get(ProfileKeys::DistanceRingsEnabled, settings.distance_rings_enabled);

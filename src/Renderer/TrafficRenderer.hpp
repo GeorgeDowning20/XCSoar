@@ -14,11 +14,16 @@ class Angle;
 
 namespace TrafficRenderer
 {
+/**
+ * @param scale_percent Size of the map symbol as a percentage of the
+ * default size (see MapSettings::traffic_icon_scale).
+ */
 void
 Draw(Canvas &canvas, const TrafficLook &traffic_look,
      bool fading,
      const FlarmTraffic &traffic, Angle angle,
-     FlarmColor color, PixelPoint pt) noexcept;
+     FlarmColor color, PixelPoint pt,
+     unsigned scale_percent=100) noexcept;
 
 /**
  * Draw a traffic symbol scaled to fit a list row icon slot.
@@ -31,13 +36,16 @@ DrawList(Canvas &canvas, const TrafficLook &traffic_look,
 
 void
 Draw(Canvas &canvas, const TrafficLook &traffic_look,
-     const GliderLinkTraffic &traffic, Angle angle, PixelPoint pt) noexcept;
+     const GliderLinkTraffic &traffic, Angle angle, PixelPoint pt,
+     unsigned scale_percent=100) noexcept;
 
 /**
  * Pixel height of map traffic symbols (DPI-aware, not window size).
+ *
+ * @param scale_percent Size as a percentage of the default size.
  */
 [[gnu::const]]
-unsigned MapIconSize() noexcept;
+unsigned MapIconSize(unsigned scale_percent=100) noexcept;
 
 /**
  * Label offsets for map traffic symbols, derived from #MapIconSize().
@@ -53,5 +61,5 @@ struct MapTrafficLabelLayout {
 };
 
 [[gnu::const]]
-MapTrafficLabelLayout MapLabelLayout() noexcept;
+MapTrafficLabelLayout MapLabelLayout(unsigned scale_percent=100) noexcept;
 }

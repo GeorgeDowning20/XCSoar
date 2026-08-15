@@ -20,7 +20,7 @@
 static void
 DrawMirroredPolygon(std::span<const BulkPixelPoint> src,
                     Canvas &canvas, const Angle angle,
-                    const PixelPoint pos)
+                    const PixelPoint pos, unsigned scale_percent)
 {
   std::array<BulkPixelPoint, 64> dst;
   assert(2 * src.size() <= dst.size());
@@ -31,9 +31,11 @@ DrawMirroredPolygon(std::span<const BulkPixelPoint> src,
     dst[2 * src.size() - i - 1].y = dst[i].y;
   }
 #ifdef ENABLE_OPENGL
-  CanvasRotateShift rotate_shift(pos, angle, Layout::Scale(0.5f));
+  CanvasRotateShift rotate_shift(pos, angle,
+                                Layout::Scale(0.5f * scale_percent / 100.f));
 #else
-  PolygonRotateShift({dst.data(), 2 * src.size()}, pos, angle, Layout::Scale(50U));
+  PolygonRotateShift({dst.data(), 2 * src.size()}, pos, angle,
+                     Layout::Scale(50U) * scale_percent / 100);
 #endif
   canvas.DrawPolygon(dst.data(), 2 * src.size());
 }
@@ -42,7 +44,8 @@ static void
 DrawDetailedAircraft(Canvas &canvas, bool inverse,
                      const AircraftLook &look,
                      const Angle angle,
-                     const PixelPoint aircraft_pos)
+                     const PixelPoint aircraft_pos,
+                     unsigned scale_percent)
 {
   {
     static constexpr BulkPixelPoint Aircraft[] = {
@@ -68,7 +71,7 @@ DrawDetailedAircraft(Canvas &canvas, bool inverse,
       canvas.SelectWhitePen();
     }
 
-    DrawMirroredPolygon(Aircraft, canvas, angle, aircraft_pos);
+    DrawMirroredPolygon(Aircraft, canvas, angle, aircraft_pos, scale_percent);
   }
 
   {
@@ -81,7 +84,7 @@ DrawDetailedAircraft(Canvas &canvas, bool inverse,
 
     canvas.Select(look.canopy_pen);
     canvas.Select(look.canopy_brush);
-    DrawMirroredPolygon(Canopy, canvas, angle, aircraft_pos);
+    DrawMirroredPolygon(Canopy, canvas, angle, aircraft_pos, scale_percent);
   }
 }
 
@@ -151,7 +154,8 @@ AircraftRenderer::DrawSimple(Canvas &canvas, const AircraftLook &look,
 static void
 DrawSimpleAircraft(Canvas &canvas, const AircraftLook &look,
                    const Angle angle,
-                   const PixelPoint aircraft_pos, bool large) noexcept
+                   const PixelPoint aircraft_pos, bool large,
+                   unsigned scale_percent) noexcept
 {
   const auto *aircraft = large ? AircraftLarge : AircraftSmall;
   const std::size_t aircraft_points = large
@@ -159,7 +163,7 @@ DrawSimpleAircraft(Canvas &canvas, const AircraftLook &look,
     : ARRAY_SIZE(AircraftSmall);
 
   const RotatedPolygonRenderer renderer({aircraft, aircraft_points},
-                                        aircraft_pos, angle);
+                                        aircraft_pos, angle, scale_percent);
 
   canvas.SelectHollowBrush();
   canvas.Select(look.aircraft_simple2_pen);
@@ -171,7 +175,8 @@ DrawSimpleAircraft(Canvas &canvas, const AircraftLook &look,
 
 static void
 DrawHangGlider(Canvas &canvas, [[maybe_unused]] const AircraftLook &look,
-               const Angle angle, const PixelPoint aircraft_pos, bool inverse)
+               const Angle angle, const PixelPoint aircraft_pos, bool inverse,
+               unsigned scale_percent)
 {
   static constexpr BulkPixelPoint aircraft[] = {
     {1, -3},
@@ -197,13 +202,14 @@ DrawHangGlider(Canvas &canvas, [[maybe_unused]] const AircraftLook &look,
   }
 
   const RotatedPolygonRenderer renderer(aircraft,
-                                        aircraft_pos, angle);
+                                        aircraft_pos, angle, scale_percent);
   renderer.Draw(canvas, 0, ARRAY_SIZE(aircraft));
 }
 
 static void
 DrawParaGlider(Canvas &canvas, [[maybe_unused]] const AircraftLook &look,
-               const Angle angle, const PixelPoint aircraft_pos, bool inverse)
+               const Angle angle, const PixelPoint aircraft_pos, bool inverse,
+               unsigned scale_percent)
 {
   static constexpr BulkPixelPoint aircraft[] = {
     // Wing
@@ -227,7 +233,7 @@ DrawParaGlider(Canvas &canvas, [[maybe_unused]] const AircraftLook &look,
    };
 
   const RotatedPolygonRenderer renderer(aircraft,
-                                        aircraft_pos, angle);
+                                        aircraft_pos, angle, scale_percent);
 
   if (inverse) {
     canvas.SelectBlackBrush();
@@ -254,29 +260,30 @@ AircraftRenderer::Draw(Canvas &canvas, const MapSettings &settings_map,
                        const Angle angle, const PixelPoint aircraft_pos)
 {
   const bool inverse = IsDithered() || !settings_map.terrain.enable;
+  const unsigned scale_percent = (unsigned)settings_map.aircraft_icon_scale;
 
   switch (settings_map.aircraft_symbol) {
   case AircraftSymbol::DETAILED:
     DrawDetailedAircraft(canvas, inverse,
-                         look, angle, aircraft_pos);
+                         look, angle, aircraft_pos, scale_percent);
     break;
 
   case AircraftSymbol::SIMPLE_LARGE:
-    DrawSimpleAircraft(canvas, look, angle, aircraft_pos, true);
+    DrawSimpleAircraft(canvas, look, angle, aircraft_pos, true, scale_percent);
     break;
 
   case AircraftSymbol::SIMPLE:
-    DrawSimpleAircraft(canvas, look, angle, aircraft_pos, false);
+    DrawSimpleAircraft(canvas, look, angle, aircraft_pos, false, scale_percent);
     break;
 
   case AircraftSymbol::HANGGLIDER:
     DrawHangGlider(canvas, look, angle, aircraft_pos,
-                   inverse);
+                   inverse, scale_percent);
     break;
 
   case AircraftSymbol::PARAGLIDER:
     DrawParaGlider(canvas, look, angle, aircraft_pos,
-                   inverse);
+                   inverse, scale_percent);
     break;
   }
 }
