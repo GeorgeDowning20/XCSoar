@@ -321,7 +321,14 @@ MainWindow::LayoutMapArea() noexcept
   if (HaveBottomWidget())
     bottom_widget->Move(bottom_rect);
 
-  map->Move(GetMapRectAbove(main_rect, bottom_rect));
+  PixelRect map_rect = GetMapRectAbove(main_rect, bottom_rect);
+  #if defined(__APPLE__) && TARGET_OS_IPHONE
+    /* On iOS, expand the map to use the full screen including notch/home indicator area */
+    map_rect = static_cast<UI::TopWindow*>(this)->GetNativeScreenRect();
+  #endif  
+  
+  map->Move(map_rect);
+  map->FullRedraw();
 }
 
 void
@@ -478,6 +485,11 @@ MainWindow::InitialiseConfigured()
     Initialise();
 
   PixelRect rc = GetClientRect();
+
+  #if defined(__APPLE__) && TARGET_OS_IPHONE
+  /* On iOS, use the full screen for infoboxes to span edge-to-edge */
+  rc = static_cast<UI::TopWindow*>(this)->GetNativeScreenRect();
+#endif
 
   const InfoBoxLayout::Layout ib_layout =
     InfoBoxLayout::Calculate(rc, ui_settings.info_boxes.geometry);
@@ -693,7 +705,12 @@ MainWindow::ReinitialiseLayout() noexcept
        yet either, so there is nothing to do here */
     return;
 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+  /* On iOS, use the full screen for infoboxes to span edge-to-edge */
+  const PixelRect rc = static_cast<UI::TopWindow*>(this)->GetNativeScreenRect();
+#else
   const PixelRect rc = GetClientRect();
+#endif
 
 #ifndef ENABLE_OPENGL
   if (draw_thread == nullptr)

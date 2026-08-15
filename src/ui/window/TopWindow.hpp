@@ -427,6 +427,19 @@ public:
 
     return result;
   }
+
+  /**
+   * Get the full native screen rect (including notch/Dynamic Island and home indicator).
+   * Used for full-screen map rendering on iOS.
+   */
+  [[gnu::pure]]
+  const PixelRect GetNativeScreenRect() const noexcept {
+    CGRect screenBounds = [UIScreen mainScreen].bounds;
+    CGFloat scale = [UIScreen mainScreen].nativeScale;
+    int width = (int)(screenBounds.size.width * scale);
+    int height = (int)(screenBounds.size.height * scale);
+    return PixelRect(0, 0, width, height);
+  }
 #endif
 
 #ifndef USE_WINUSER

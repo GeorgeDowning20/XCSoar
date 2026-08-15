@@ -268,7 +268,15 @@ private:
 
   [[gnu::pure]]
   PixelRect GetMainRect() const noexcept {
-    return FullScreen ? GetClientRect() : map_rect;
+    if (FullScreen) {
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+      /* On iOS in full screen, use the full native screen including notch/home indicator */
+      return static_cast<UI::TopWindow*>(const_cast<MainWindow*>(this))->GetNativeScreenRect();
+#else
+      return GetClientRect();
+#endif
+    }
+    return map_rect;
   }
 
   /**
