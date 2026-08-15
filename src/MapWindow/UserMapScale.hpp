@@ -9,8 +9,10 @@
  * Clamp a continuous user map scale (keyboard, mouse wheel, pinch,
  * Lua) to the same min/max used by InputEvents::sub_SetZoom().
  *
- * @param vmin  polar minimum speed (m/s); used for the cruise
- *              "2 minute" minimum scale
+ * The same minimum (most zoomed-in) scale is used for cruise and
+ * circling mode.
+ *
+ * @param vmin  unused, kept for API compatibility
  */
 [[nodiscard]] [[gnu::pure]]
 double

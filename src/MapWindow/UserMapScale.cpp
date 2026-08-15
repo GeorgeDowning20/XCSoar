@@ -16,9 +16,9 @@
 #include <algorithm>
 
 double
-ClampUserMapScale(double scale, DisplayMode mode, double vmin) noexcept
+ClampUserMapScale([[maybe_unused]] double scale, [[maybe_unused]] DisplayMode mode,
+                   [[maybe_unused]] double vmin) noexcept
 {
-  const double scale_2min_distance = vmin * 12;
   constexpr double scale_100m = 10;
   double scale_1600km = 1600 * 100;
 
@@ -27,9 +27,9 @@ ClampUserMapScale(double scale, DisplayMode mode, double vmin) noexcept
     scale_1600km = std::min(scale_1600km, double(OpenGL::max_map_scale));
 #endif
 
-  double minreasonable = mode == DisplayMode::CIRCLING
-    ? scale_100m
-    : std::max(scale_100m, scale_2min_distance);
+  /* use the same minimum (most zoomed-in) scale in cruise mode as in
+     circling mode, instead of limiting cruise zoom based on vmin */
+  double minreasonable = scale_100m;
 
   /* a small GPU max_map_scale can push the upper bound below the
      lower one; keep std::clamp() defined */
