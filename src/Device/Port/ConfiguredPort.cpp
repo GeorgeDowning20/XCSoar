@@ -106,6 +106,12 @@ OpenPortInternal(EventLoop &event_loop, Cares::Channel &cares,
     return OpenAndroidBleSerialPort(*bluetooth_helper,
                                     config.bluetooth_mac,
                                     listener, handler);
+#elif defined(__APPLE__) && TARGET_OS_IPHONE
+    if (config.bluetooth_mac.empty())
+      throw std::runtime_error("No Bluetooth device address configured");
+    
+    return OpenAppleBluetoothPort(config.bluetooth_mac.c_str(),
+                                  listener, handler);
 #else
     throw std::runtime_error("Bluetooth not available");
 #endif
@@ -120,6 +126,12 @@ OpenPortInternal(EventLoop &event_loop, Cares::Channel &cares,
 
     return OpenAndroidBluetoothPort(*bluetooth_helper, config.bluetooth_mac,
                                     listener, handler);
+#elif defined(__APPLE__) && TARGET_OS_IPHONE
+    if (config.bluetooth_mac.empty())
+      throw std::runtime_error("No Bluetooth device address configured");
+    
+    return OpenAppleBluetoothPort(config.bluetooth_mac.c_str(),
+                                  listener, handler);
 #else
     throw std::runtime_error("Bluetooth not available");
 #endif
