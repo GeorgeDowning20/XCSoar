@@ -39,6 +39,12 @@ static void Load(const ProfileMap &map, CloudSettings &settings) {
     CloudSettings::ParseOwnFlarmIds(map.Get(ProfileKeys::CloudOwnFlarmId));
 }
 
+static void Load(const ProfileMap &map, OGNSettings &settings) {
+  map.Get(ProfileKeys::OGNEnabled, settings.enabled);
+  map.Get(ProfileKeys::OGNRangeKM, settings.range_km);
+  map.Get(ProfileKeys::OGNAircraftTypeMask, settings.aircraft_type_mask);
+}
+
 static void Load(const ProfileMap &map,
                  SkyLinesTracking::Settings &settings) {
   map.Get(ProfileKeys::SkyLinesTrackingEnabled, settings.enabled);
@@ -77,6 +83,7 @@ Profile::Load(const ProfileMap &map, TrackingSettings &settings)
 {
   Load(map, settings.skylines);
   Load(map, settings.cloud);
+  Load(map, settings.ogn);
   Load(map, settings.livetrack24);
 }
 

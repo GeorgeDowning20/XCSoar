@@ -4,6 +4,7 @@
 #include "OGNClient.hpp"
 
 #include "event/Loop.hxx"
+#include "event/Call.hxx"
 #include "event/net/cares/Channel.hxx"
 #include "net/SocketAddress.hxx"
 #include "util/BindMethod.hxx"
@@ -26,7 +27,8 @@ constexpr std::size_t RX_BUFFER_CAPACITY = 16384;
 OGNClient::OGNClient(EventLoop &_loop, Cares::Channel &_cares,
                      OGNAprsHandler &_handler,
                      std::string &&_host, unsigned _port,
-                     std::string &&_user, std::string &&_pass) noexcept
+                     std::string &&_user, std::string &&_pass,
+                     std::string &&_filter) noexcept
   : ConnectSocketHandler(),
     loop(_loop),
     cares(_cares),
@@ -35,13 +37,54 @@ OGNClient::OGNClient(EventLoop &_loop, Cares::Channel &_cares,
     port(_port),
     user(std::move(_user)),
     pass(std::move(_pass)),
+    filter(std::move(_filter)),
     resolver_handler(*this),
     connector(loop, *this),
     read_event(loop, BIND_THIS_METHOD(OnReadReady)),
     reconnect_timer(loop, BIND_THIS_METHOD(OnReconnectTimer)) {}
 
+OGNClient::~OGNClient() noexcept
+{
+  BlockingCall(loop, [this](){ InternalStop(); });
+}
+
+void
+OGNClient::SetFilter(std::string &&_filter) noexcept
+{
+  BlockingCall(loop, [this, f = std::move(_filter)]() mutable {
+    InternalSetFilter(std::move(f));
+  });
+}
+
+void
+OGNClient::InternalSetFilter(std::string &&_filter) noexcept
+{
+  if (filter == _filter)
+    return;
+
+  filter = std::move(_filter);
+
+  if (!IsConnected())
+    return;
+
+  char line[512];
+  const int n = std::snprintf(line, sizeof(line), "#filter %s\r\n",
+                              filter.c_str());
+  if (n <= 0 || unsigned(n) >= sizeof(line))
+    return;
+
+  (void)read_event.GetSocket().WriteNoWait(
+    AsBytes(std::string_view(line, unsigned(n))));
+}
+
 void
 OGNClient::Start() noexcept
+{
+  BlockingCall(loop, [this](){ InternalStart(); });
+}
+
+void
+OGNClient::InternalStart() noexcept
 {
   std::cerr << "OGN\tlookup\t" << host << ':' << port << std::endl;
   BeginLookup();
@@ -49,6 +92,12 @@ OGNClient::Start() noexcept
 
 void
 OGNClient::Stop() noexcept
+{
+  BlockingCall(loop, [this](){ InternalStop(); });
+}
+
+void
+OGNClient::InternalStop() noexcept
 {
   reconnect_timer.Cancel();
   resolver_job.reset();
@@ -111,8 +160,8 @@ OGNClient::SendLogin() noexcept
   char line[512];
   const int n =
     std::snprintf(line, sizeof(line),
-                  "user %s pass %s vers XCSoar-Cloud 0.1 filter t/o\r\n",
-                  user.c_str(), pass.c_str());
+                  "user %s pass %s vers XCSoar 0.1 filter %s\r\n",
+                  user.c_str(), pass.c_str(), filter.c_str());
   if (n <= 0 || unsigned(n) >= sizeof(line))
     return;
 

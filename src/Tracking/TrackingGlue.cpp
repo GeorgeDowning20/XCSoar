@@ -81,6 +81,7 @@ MakeEffectiveOwnFlarmIds(const CloudSettings::OwnFlarmIdList &configured,
 TrackingGlue::TrackingGlue(EventLoop &event_loop,
                            CurlGlobal &curl) noexcept
   :skylines(event_loop, this),
+   ogn(event_loop, *this),
    livetrack24(curl)
 {
   online_traffic.Clear();
@@ -91,6 +92,8 @@ TrackingGlue::SetSettings(const TrackingSettings &_settings)
 {
   cloud_enabled = _settings.cloud.enabled;
   cloud_show_traffic = _settings.cloud.show_traffic;
+  ogn_enabled = _settings.ogn.enabled;
+  ogn.SetSettings(_settings.ogn);
 
   {
     const std::lock_guard lock{online_mutex};
@@ -98,7 +101,8 @@ TrackingGlue::SetSettings(const TrackingSettings &_settings)
     own_flarm_ids = MakeEffectiveOwnFlarmIds(configured_own_flarm_ids,
                                              device_radio_id);
 
-    if (cloud_enabled != TriState::TRUE || !cloud_show_traffic) {
+    if ((cloud_enabled != TriState::TRUE || !cloud_show_traffic) &&
+        !ogn_enabled) {
       online_traffic.Clear();
       online_pilot_ids.clear();
       online_last_received.clear();
@@ -117,6 +121,7 @@ TrackingGlue::BeginShutdown() noexcept
 
   shutting_down = true;
   skylines.BeginShutdown();
+  ogn.BeginShutdown();
   livetrack24.BeginShutdown();
 }
 
@@ -141,6 +146,8 @@ TrackingGlue::OnTimer(const MoreData &basic, const DerivedInfo &calculated)
     if (!IsDNSUnavailable(error))
       LogError(error, "SkyLines error");
   }
+
+  ogn.Tick(basic);
 
   livetrack24.OnTimer(basic, calculated);
 }
@@ -229,6 +236,11 @@ TrackingGlue::OnTraffic(uint32_t pilot_id,
 {
   if (source == SkyLinesTracking::TrafficSource::CLOUD) {
     if (cloud_enabled != TriState::TRUE || !cloud_show_traffic)
+      return;
+  }
+
+  if (source == SkyLinesTracking::TrafficSource::OGN) {
+    if (!ogn_enabled)
       return;
   }
 

@@ -8,6 +8,7 @@
 #ifdef HAVE_TRACKING
 
 #include "Tracking/CloudSettings.hpp"
+#include "Tracking/OGNSettings.hpp"
 #include "Tracking/SkyLines/Features.hpp"
 #include "Tracking/SkyLines/Settings.hpp"
 #include "Tracking/LiveTrack24/Settings.hpp"
@@ -18,11 +19,13 @@
 struct TrackingSettings {
   SkyLinesTracking::Settings skylines;
   CloudSettings cloud;
+  OGNSettings ogn;
   LiveTrack24::Settings livetrack24;
 
   void SetDefaults() {
     skylines.SetDefaults();
     cloud.SetDefaults();
+    ogn.SetDefaults();
     livetrack24.SetDefaults();
   }
 };

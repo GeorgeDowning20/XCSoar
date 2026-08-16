@@ -17,6 +17,8 @@ namespace SkyLinesTracking {
 enum class TrafficSource {
   SKYLINES,
   CLOUD,
+  /** Traffic from a direct in-app OGN APRS-IS connection. */
+  OGN,
   COUNT,
 };
 

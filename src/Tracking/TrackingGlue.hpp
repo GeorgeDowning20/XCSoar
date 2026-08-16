@@ -14,6 +14,7 @@
 #include "FLARM/Data.hpp"
 #include "Tracking/SkyLines/Glue.hpp"
 #include "Tracking/SkyLines/Data.hpp"
+#include "Tracking/OGNGlue.hpp"
 #include "Tracking/LiveTrack24/Glue.hpp"
 #include "util/StaticString.hxx"
 #include "util/StaticArray.hxx"
@@ -36,6 +37,8 @@ class TrackingGlue final
 
   SkyLinesTracking::Data skylines_data;
 
+  OGNGlue ogn;
+
   LiveTrack24::Glue livetrack24;
 
   mutable Mutex online_mutex;
@@ -52,6 +55,7 @@ class TrackingGlue final
 
   TriState cloud_enabled = TriState::UNKNOWN;
   bool cloud_show_traffic = true;
+  bool ogn_enabled = false;
 
   /** Own-ship altitude [m MSL] for online-traffic filtering; -1 if unknown. */
   int own_altitude = -1;
@@ -80,6 +84,20 @@ public:
 
   void MergeOnlineTraffic(FlarmData &flarm,
                           const NMEAInfo &basic) noexcept;
+
+  /**
+   * Feed one traffic report from the direct in-app OGN APRS-IS
+   * connection (#OGNGlue) into the same online-traffic pipeline used
+   * by SkyLines/Cloud traffic.
+   */
+  void OnOgnTraffic(uint32_t pilot_id, const GeoPoint &location,
+                    int altitude, bool altitude_valid,
+                    unsigned track_deg, bool track_valid,
+                    FlarmId flarm_id, unsigned aircraft_type) {
+    OnTraffic(pilot_id, 0, location, altitude, altitude_valid,
+             SkyLinesTracking::TrafficSource::OGN,
+             track_deg, track_valid, flarm_id, aircraft_type);
+  }
 
   const SkyLinesTracking::Data &GetSkyLinesData() const {
     return skylines_data;

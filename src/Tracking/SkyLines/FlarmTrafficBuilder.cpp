@@ -25,7 +25,7 @@ SkyLinesTracking::FlarmTrafficBuilder::SourceForOnline(
   if (source == TrafficSource::SKYLINES)
     return FlarmTraffic::SourceType::SKYLINES;
 
-  if ((pilot_id & OGN_PILOT_ID_MASK) != 0)
+  if (source == TrafficSource::OGN || (pilot_id & OGN_PILOT_ID_MASK) != 0)
     return FlarmTraffic::SourceType::OGN;
 
   return FlarmTraffic::SourceType::CLOUD;

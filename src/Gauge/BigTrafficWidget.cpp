@@ -27,6 +27,8 @@
 #include "Asset.hpp"
 #include "util/Macros.hpp"
 
+#include <fmt/format.h>
+
 #include <algorithm>
 
 static void
@@ -112,6 +114,7 @@ public:
 
 protected:
   void PaintTrafficInfo(Canvas &canvas) const;
+  void PaintTargetCount(Canvas &canvas) const;
   void PaintClimbRate(Canvas &canvas, PixelRect rc, double climb_rate,
                       Color text_color) const;
   void PaintDistance(Canvas &canvas, PixelRect rc, double distance,
@@ -576,6 +579,25 @@ FlarmTrafficControl::PaintTrafficInfo(Canvas &canvas) const
   PaintID(canvas, rc, traffic, id_color);
 }
 
+/**
+ * Paints the total number of currently displayed traffic targets.
+ */
+void
+FlarmTrafficControl::PaintTargetCount(Canvas &canvas) const
+{
+  const auto text =
+    fmt::format(fmt::runtime(_("Targets: {}")), data.list.size());
+
+  canvas.Select(look.info_labels_font);
+  canvas.SetBackgroundTransparent();
+  canvas.SetTextColor(look.default_color);
+
+  const auto size = canvas.CalcTextSize(text);
+  const unsigned padding = Layout::GetTextPadding();
+  const PixelPoint p{int(canvas.GetWidth() - size.width) / 2, int(padding)};
+  canvas.DrawText(p, text);
+}
+
 void
 FlarmTrafficControl::OnPaint(Canvas &canvas) noexcept
 {
@@ -584,6 +606,7 @@ FlarmTrafficControl::OnPaint(Canvas &canvas) noexcept
   PaintTaskDirection(canvas);
   FlarmTrafficWindow::Paint(canvas);
   PaintTrafficInfo(canvas);
+  PaintTargetCount(canvas);
 }
 
 void

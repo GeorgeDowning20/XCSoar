@@ -60,6 +60,7 @@
 #ifdef HAVE_TRACKING
 #include "Panels/TrackingConfigPanel.hpp"
 #include "Panels/CloudConfigPanel.hpp"
+#include "Panels/OGNConfigPanel.hpp"
 #endif
 
 #ifdef HAVE_HTTP
@@ -162,6 +163,7 @@ static constexpr TabMenuPage setup_pages[] = {
 #ifdef HAVE_TRACKING
   { N_("Tracking"), CreateTrackingConfigPanel },
   { "XCSoar Cloud", CreateCloudConfigPanel },
+  { "OGN", CreateOGNConfigPanel },
 #endif
   { "WeGlide", CreateWeGlideConfigPanel },
 #ifdef HAVE_VOLUME_CONTROLLER

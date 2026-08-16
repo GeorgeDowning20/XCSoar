@@ -293,6 +293,10 @@ constexpr std::string_view CloudKey = "CloudKey";
 
 constexpr std::string_view CloudOwnFlarmId = "CloudOwnFlarmId";
 
+constexpr std::string_view OGNEnabled = "OGNEnabled";
+constexpr std::string_view OGNRangeKM = "OGNRangeKM";
+constexpr std::string_view OGNAircraftTypeMask = "OGNAircraftTypeMask";
+
 constexpr std::string_view OnlineTrafficMapMode = "OnlineTrafficMapMode";
 
 constexpr std::string_view LiveTrack24Enabled = "LiveTrack24Enabled";

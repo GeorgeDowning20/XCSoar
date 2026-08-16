@@ -61,6 +61,9 @@ class OGNClient final : ConnectSocketHandler {
   const std::string user;
   const std::string pass;
 
+  /** APRS-IS server-side filter spec (e.g. "t/o" or "r/lat/lon/dist"). */
+  std::string filter;
+
   ResolverHandler resolver_handler;
   std::optional<Cares::SimpleResolver> resolver_job;
 
@@ -74,12 +77,34 @@ public:
   OGNClient(EventLoop &_loop, Cares::Channel &_cares,
             OGNAprsHandler &_handler,
             std::string &&_host, unsigned _port,
-            std::string &&_user, std::string &&_pass) noexcept;
+            std::string &&_user, std::string &&_pass,
+            std::string &&_filter = "t/o") noexcept;
+
+  /**
+   * Safe to call from any thread: all public methods (including this
+   * destructor) marshal their work onto the #EventLoop internally.
+   */
+  ~OGNClient() noexcept;
 
   void Start() noexcept;
   void Stop() noexcept;
 
+  [[gnu::pure]]
+  bool IsConnected() const noexcept {
+    return read_event.IsDefined();
+  }
+
+  /**
+   * Replace the server-side filter.  Takes effect on the next login;
+   * if already connected, also pushes a live "#filter" update.
+   */
+  void SetFilter(std::string &&_filter) noexcept;
+
 private:
+  void InternalStart() noexcept;
+  void InternalStop() noexcept;
+  void InternalSetFilter(std::string &&_filter) noexcept;
+
   /* ConnectSocketHandler */
   void OnSocketConnectSuccess(UniqueSocketDescriptor fd) noexcept override;
   void OnSocketConnectError(std::exception_ptr error) noexcept override;

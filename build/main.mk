@@ -758,7 +758,8 @@ XCSOAR_SOURCES += \
 
 XCSOAR_SOURCES += \
 	$(SRC)/Dialogs/Settings/Panels/TrackingConfigPanel.cpp \
-	$(SRC)/Dialogs/Settings/Panels/CloudConfigPanel.cpp
+	$(SRC)/Dialogs/Settings/Panels/CloudConfigPanel.cpp \
+	$(SRC)/Dialogs/Settings/Panels/OGNConfigPanel.cpp
 
 XCSOAR_SOURCES += \
 	$(SRC)/Tracking/LiveTrack24/SessionID.cpp \
@@ -772,6 +773,9 @@ XCSOAR_SOURCES += \
 	$(SRC)/Tracking/SkyLines/Key.cpp \
 	$(SRC)/Tracking/SkyLines/Glue.cpp \
 	$(SRC)/Tracking/SkyLines/FlarmTrafficBuilder.cpp \
+	$(SRC)/Cloud/OGNAprs.cpp \
+	$(SRC)/Cloud/OGNClient.cpp \
+	$(SRC)/Tracking/OGNGlue.cpp \
 	$(SRC)/Tracking/TrackingGlue.cpp \
 	$(SRC)/NetComponents.cpp
 
