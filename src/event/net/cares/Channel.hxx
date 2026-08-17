@@ -46,6 +46,14 @@ public:
   }
 
   /**
+   * Reload nameservers/resolv.conf from the current system
+   * configuration.  c-ares only reads this once at startup, so call
+   * this before resolving after a network change (e.g. WiFi/cellular
+   * switch) to avoid querying a now-unreachable stale DNS server.
+   */
+  void Reinit() noexcept;
+
+  /**
    * Look up a host name and call a #Handler method upon
    * completion.
    */

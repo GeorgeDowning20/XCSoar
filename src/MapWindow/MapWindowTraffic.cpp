@@ -26,6 +26,28 @@ static constexpr Color FLARM_TRAIL_CLIMB_COLOR{0xff, 0x00, 0x00};
 static constexpr Color FLARM_TRAIL_UP_COLOR{0xff, 0xff, 0x00};
 static constexpr Color FLARM_TRAIL_SINK_COLOR{0x00, 0x00, 0xff};
 
+/** Above this many offscreen blob markers, hide their labels to avoid clutter. */
+static constexpr unsigned MAX_OFFSCREEN_TRAFFIC_NAMES = 6;
+
+/**
+ * Best available identifier for a traffic target: its resolved name
+ * if known, otherwise the FLARM/ICAO id, so traffic without a
+ * database/callsign match is still identifiable on the map.
+ */
+static const char *
+GetTrafficLabel(const FlarmTraffic &traffic, char (&buffer)[16]) noexcept
+{
+  if (traffic.HasName() && !StringIsEmpty(traffic.name))
+    return traffic.name.c_str();
+
+  if (traffic.id.IsDefined()) {
+    traffic.id.Format(buffer);
+    return buffer;
+  }
+
+  return nullptr;
+}
+
 static void
 DrawFlarmTrail(Canvas &canvas, const WindowProjection &projection,
                const std::deque<FlarmTrailPoint> &trail,
@@ -73,7 +95,8 @@ DrawOffscreenFlarmMarker(Canvas &canvas, PixelPoint position,
                          const FlarmTraffic &traffic, double set_mc,
                          double current_30s_vario,
                          DisplayOnlineTrafficMapMode online_mode,
-                         unsigned marker_scale_percent) noexcept
+                         unsigned marker_scale_percent,
+                         bool show_names) noexcept
 {
   const auto indicators = TrafficClimbAltIndicators::GetClimbAltIndicators(
     traffic, set_mc, current_30s_vario);
@@ -107,17 +130,19 @@ DrawOffscreenFlarmMarker(Canvas &canvas, PixelPoint position,
                       Layout::ScalePenWidth(1));
   }
 
-  const bool show_name = traffic.HasName() && !StringIsEmpty(traffic.name) &&
+  const bool show_name = show_names &&
     (!FlarmTraffic::IsInjectedSource(traffic.source) ||
      online_mode == DisplayOnlineTrafficMapMode::SYMBOL_NAME);
-  if (show_name) {
+  char label_buffer[16];
+  const char *label = show_name ? GetTrafficLabel(traffic, label_buffer) : nullptr;
+  if (label != nullptr) {
     TextInBoxMode mode;
     if (!fading)
       mode.shape = LabelShape::OUTLINED;
     mode.align = TextInBoxMode::CENTER;
     mode.vertical_position = TextInBoxMode::ABOVE;
     mode.move_in_view = true;
-    TextInBox(canvas, traffic.name, position, mode, map_rect);
+    TextInBox(canvas, label, position, mode, map_rect);
   }
 }
 
@@ -152,15 +177,17 @@ DrawFlarmTraffic(Canvas &canvas, const WindowProjection &projection,
     TrafficRenderer::MapLabelLayout(scale_percent);
   if ((sc - aircraft_pos).MagnitudeSquared() >
       layout.min_label_distance * layout.min_label_distance) {
-    const bool show_name = traffic.HasName() && !StringIsEmpty(traffic.name) &&
+    const bool show_name =
       (!FlarmTraffic::IsInjectedSource(traffic.source) ||
        online_mode == DisplayOnlineTrafficMapMode::SYMBOL_NAME);
+    char label_buffer[16];
+    const char *label = show_name ? GetTrafficLabel(traffic, label_buffer) : nullptr;
 
-    if (show_name) {
+    if (label != nullptr) {
       auto sc_name = sc;
       sc_name.y -= layout.name_offset_y;
 
-      TextInBox(canvas, traffic.name, sc_name,
+      TextInBox(canvas, label, sc_name,
                 mode, projection.GetScreenRect());
     }
 
@@ -216,6 +243,22 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
   const double set_mc = GetComputerSettings().polar.glide_polar_task.GetMC();
   const double current_30s_vario = Calculated().average;
 
+  // Count offscreen blob markers first so we can hide their labels when
+  // there would be too many of them cluttering the map edge.
+  unsigned offscreen_count = 0;
+  for (const auto &traffic : flarm.list) {
+    if (!traffic.location_available)
+      continue;
+    if (FlarmTraffic::IsInjectedSource(traffic.source) &&
+        online_mode == DisplayOnlineTrafficMapMode::OFF)
+      continue;
+    if (GetOffscreenTrafficMarkerPosition(projection, traffic_visible_rect,
+                                          traffic.location,
+                                          marker_scale_percent))
+      ++offscreen_count;
+  }
+  const bool show_offscreen_names = offscreen_count <= MAX_OFFSCREEN_TRAFFIC_NAMES;
+
   // Circle through the traffic targets
   for (const auto &traffic : flarm.list) {
     if (!traffic.location_available)
@@ -237,7 +280,7 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
       DrawOffscreenFlarmMarker(canvas, *marker, traffic_visible_rect,
                                traffic_look, false, colorful_traffic, traffic,
                                set_mc, current_30s_vario, online_mode,
-                               marker_scale_percent);
+                               marker_scale_percent, show_offscreen_names);
       continue;
     }
 
@@ -273,7 +316,7 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
         DrawOffscreenFlarmMarker(canvas, *marker, traffic_visible_rect,
                                  traffic_look, true, colorful_traffic, traffic,
                                  set_mc, current_30s_vario, online_mode,
-                                 marker_scale_percent);
+                                 marker_scale_percent, show_offscreen_names);
         continue;
       }
 

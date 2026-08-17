@@ -84,6 +84,12 @@ Channel::Channel(EventLoop &event_loop)
 
 Channel::~Channel() noexcept { ares_destroy(channel); }
 
+void
+Channel::Reinit() noexcept
+{
+  ares_reinit(channel);
+}
+
 void Channel::UpdateSockets() noexcept {
   timeout_event.Cancel();
   struct timeval timeout_buffer;

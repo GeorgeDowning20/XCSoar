@@ -71,6 +71,9 @@ class OGNClient final : ConnectSocketHandler {
   SocketEvent read_event;
   CoarseTimerEvent reconnect_timer;
 
+  /** Remaining resolved addresses to try after the current one fails. */
+  std::forward_list<AllocatedSocketAddress> pending_addresses;
+
   std::string rx_buffer;
 
 public:
@@ -114,6 +117,7 @@ private:
 
   void BeginLookup() noexcept;
   void TryConnect(std::forward_list<AllocatedSocketAddress> addresses) noexcept;
+  void TryNextAddress() noexcept;
   void SendLogin() noexcept;
   void CloseConnection() noexcept;
   void ScheduleReconnect() noexcept;

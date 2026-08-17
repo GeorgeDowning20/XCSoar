@@ -110,6 +110,12 @@ OGNClient::BeginLookup() noexcept
   if (resolver_job.has_value())
     return;
 
+  /* c-ares only reads the system nameserver config once at startup;
+     reload it before each (re)connect attempt so switching between
+     WiFi and cellular doesn't leave us querying a now-unreachable
+     stale DNS server ("No route to host" on every address). */
+  cares.Reinit();
+
   resolver_job.emplace(resolver_handler, port);
   resolver_job->Start(cares, host.c_str());
 }
@@ -117,7 +123,17 @@ OGNClient::BeginLookup() noexcept
 void
 OGNClient::TryConnect(std::forward_list<AllocatedSocketAddress> addresses) noexcept
 {
-  for (AllocatedSocketAddress &a : addresses) {
+  pending_addresses = std::move(addresses);
+  TryNextAddress();
+}
+
+void
+OGNClient::TryNextAddress() noexcept
+{
+  while (!pending_addresses.empty()) {
+    AllocatedSocketAddress a = std::move(pending_addresses.front());
+    pending_addresses.pop_front();
+
     if (connector.IsPending())
       connector.Cancel();
 
@@ -131,7 +147,22 @@ OGNClient::TryConnect(std::forward_list<AllocatedSocketAddress> addresses) noexc
 void
 OGNClient::OnSocketConnectSuccess(UniqueSocketDescriptor fd) noexcept
 {
+  if (read_event.IsDefined()) {
+    /* defensive: ignore a stray duplicate connect-success (should not
+       happen now that the reconnect timer is cancelled below, but
+       don't corrupt the existing connection if it does) */
+    std::cerr << "OGN\tduplicate-connect\t" << host << ':' << port << std::endl;
+    return;
+  }
+
   std::cerr << "OGN\tconnected\t" << host << ':' << port << std::endl;
+
+  /* a reconnect may have been scheduled by an earlier failed attempt
+     while this one was still resolving/connecting; cancel it now so
+     it doesn't fire a redundant reconnect while we're happily
+     connected (#the actual cause of the "connected" twice / crash). */
+  reconnect_timer.Cancel();
+  pending_addresses.clear();
 
   read_event.Open(fd.Release());
   read_event.ScheduleRead();
@@ -151,7 +182,10 @@ OGNClient::OnSocketConnectError(std::exception_ptr error) noexcept
 {
   std::cerr << "OGN\tconnect-error\t" << host << ':' << port << '\t'
             << GetFullMessage(error) << std::endl;
-  ScheduleReconnect();
+
+  /* fall through to the next resolved address (e.g. an unreachable
+     IPv6 route) instead of giving up for a full reconnect cycle */
+  TryNextAddress();
 }
 
 void
@@ -173,6 +207,7 @@ void
 OGNClient::CloseConnection() noexcept
 {
   read_event.Close();
+  pending_addresses.clear();
 
   if (connector.IsPending())
     connector.Cancel();
