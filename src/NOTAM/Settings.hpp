@@ -43,4 +43,15 @@ struct NOTAMSettings {
    * See: faa.gov/air_traffic/publications/atpubs/notam_html/appendix_b.html
    */
   StaticString<256> hidden_qcodes{"QA QK QN QOL QOA QOBTT"};
+
+  /**
+   * Category toggles, evaluated against NOTAMFilter::ClassifyCategory().
+   * All default to shown; NOTAMCategory::OTHER is never hidden by these.
+   */
+  bool show_restricted = true;
+  bool show_navigation = true;
+  bool show_enroute = true;
+  bool show_aerodrome = true;
+  bool show_obstacle = true;
+  bool show_activity = true;
 };

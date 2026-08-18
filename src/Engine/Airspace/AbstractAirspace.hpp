@@ -266,12 +266,24 @@ public:
 
   /**
     * Returns the airspace class type. If GetType() is AirspaceClass::OTHER,
-    * returns GetClass(), otherwise returns GetType()
+    * returns GetClass(), otherwise returns GetType().
+    *
+    * Special case: for AirspaceClass::NOTAM, GetClass() overrides the
+    * rendered class/colour whenever it was set to something more specific
+    * than AirspaceClass::UNCLASSIFIED (e.g. NOTAMConverter tags NOTAMs the
+    * pilot cannot legally enter as AirspaceClass::RESTRICTED so they render
+    * red instead of the generic grey NOTAM colour), while GetType() still
+    * reports AirspaceClass::NOTAM for identification purposes elsewhere.
     *
     * @return  AirspaceClass - The determined airspace class type
     */
   AirspaceClass GetTypeOrClass() const noexcept {
-    return GetType() == AirspaceClass::OTHER ? GetClass() : GetType();
+    if (GetType() == AirspaceClass::OTHER)
+      return GetClass();
+    if (GetType() == AirspaceClass::NOTAM &&
+        GetClass() != AirspaceClass::UNCLASSIFIED)
+      return GetClass();
+    return GetType();
   }
 
   /**

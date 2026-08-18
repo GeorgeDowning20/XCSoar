@@ -8,6 +8,44 @@
 
 namespace NOTAMFilter {
 
+NOTAMCategory
+ClassifyCategory(std::string_view qcode) noexcept
+{
+  // ICAO Q-code: 'Q' + 2-letter subject + 2-letter condition (e.g. "QRTCA").
+  if (qcode.size() < 2)
+    return NOTAMCategory::OTHER;
+
+  switch (std::toupper(static_cast<unsigned char>(qcode[1]))) {
+  case 'R': // Airspace reservation/danger/military/prohibited/restricted
+    return NOTAMCategory::RESTRICTED;
+
+  case 'W': // Advisory hazard activity (air display, UAS, firing, model a/c, ...)
+    return NOTAMCategory::ACTIVITY;
+
+  case 'C': // Comms/radar facilities
+  case 'G': // GNSS
+  case 'I': // ILS
+  case 'N': // Radio navigation aids
+    return NOTAMCategory::NAVIGATION;
+
+  case 'A': // Airspace organization (FIR/CTA/ATS route/TMA/ATZ, ...)
+  case 'P': // Procedures (SID/STAR/instrument approach, ...)
+  case 'S': // ATS units (ACC/FIS/tower, ...)
+    return NOTAMCategory::ENROUTE;
+
+  case 'F': // Aerodrome facilities/services
+  case 'L': // Lighting facilities
+  case 'M': // Movement and landing area
+    return NOTAMCategory::AERODROME;
+
+  case 'O': // Obstacles
+    return NOTAMCategory::OBSTACLE;
+
+  default:
+    return NOTAMCategory::OTHER;
+  }
+}
+
 [[gnu::pure]]
 bool
 IsQCodeHidden(std::string_view qcode,
@@ -67,6 +105,35 @@ Evaluate(const struct NOTAM &notam, const NOTAMSettings &settings,
       IsQCodeHidden(notam.feature_type, settings.hidden_qcodes))
     reasons |= static_cast<FilterReasons>(FilterReason::QCODE);
 
+  switch (ClassifyCategory(notam.feature_type)) {
+  case NOTAMCategory::RESTRICTED:
+    if (!settings.show_restricted)
+      reasons |= static_cast<FilterReasons>(FilterReason::CATEGORY);
+    break;
+  case NOTAMCategory::NAVIGATION:
+    if (!settings.show_navigation)
+      reasons |= static_cast<FilterReasons>(FilterReason::CATEGORY);
+    break;
+  case NOTAMCategory::ENROUTE:
+    if (!settings.show_enroute)
+      reasons |= static_cast<FilterReasons>(FilterReason::CATEGORY);
+    break;
+  case NOTAMCategory::AERODROME:
+    if (!settings.show_aerodrome)
+      reasons |= static_cast<FilterReasons>(FilterReason::CATEGORY);
+    break;
+  case NOTAMCategory::OBSTACLE:
+    if (!settings.show_obstacle)
+      reasons |= static_cast<FilterReasons>(FilterReason::CATEGORY);
+    break;
+  case NOTAMCategory::ACTIVITY:
+    if (!settings.show_activity)
+      reasons |= static_cast<FilterReasons>(FilterReason::CATEGORY);
+    break;
+  case NOTAMCategory::OTHER:
+    break;
+  }
+
   return reasons;
 }
 
@@ -117,6 +184,14 @@ ShouldDisplay(const struct NOTAM &notam, const NOTAMSettings &settings,
     return false;
   }
 
+  if (HasFilterReason(reasons, FilterReason::CATEGORY)) {
+    if (log) {
+      LogDebug("NOTAM Filter: {} category disabled by settings",
+               notam.number.c_str());
+    }
+    return false;
+  }
+
   return reasons == 0;
 }
 
@@ -154,6 +229,9 @@ ComputeStats(const std::vector<struct NOTAM> &notams,
 
     if (HasFilterReason(reasons, FilterReason::RADIUS))
       ++stats.filtered_by_radius;
+
+    if (HasFilterReason(reasons, FilterReason::CATEGORY))
+      ++stats.filtered_by_category;
 
     if (reasons == 0)
       ++stats.final_count;

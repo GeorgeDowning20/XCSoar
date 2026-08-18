@@ -53,6 +53,14 @@ enum ControlIndex {
   RADIUS_FILTERED,
   HIDDEN_QCODES,
   QCODE_FILTERED,
+  CATEGORY_SPACER,
+  SHOW_RESTRICTED,
+  SHOW_NAVIGATION,
+  SHOW_ENROUTE,
+  SHOW_AERODROME,
+  SHOW_OBSTACLE,
+  SHOW_ACTIVITY,
+  CATEGORY_FILTERED,
 #endif
 };
 
@@ -181,6 +189,46 @@ NOTAMConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
           computer.notam.hidden_qcodes.c_str());
   StringFormat(buffer, ARRAY_SIZE(buffer),
                _("%u filtered"), stats.filtered_by_qcode);
+  AddReadOnly("", nullptr, buffer);
+
+  AddSpacer();
+
+  AddBoolean(_("Show Restricted Areas"),
+             _("Airspace you cannot legally enter: prohibited/restricted "
+               "areas, activated danger areas, temporary restricted areas, "
+               "military operating areas and airspace reservations. "
+               "Shown in red on the map."),
+             computer.notam.show_restricted);
+
+  AddBoolean(_("Show Navigation Warnings"),
+             _("NOTAMs about navigation aids, ILS, GNSS and "
+               "communication/radar facilities."),
+             computer.notam.show_navigation);
+
+  AddBoolean(_("Show En-Route Information"),
+             _("NOTAMs about airspace structure, ATS units and procedures "
+               "(SIDs/STARs, approach procedures, etc.)."),
+             computer.notam.show_enroute);
+
+  AddBoolean(_("Show Aerodrome NOTAMs"),
+             _("NOTAMs about aerodrome facilities, lighting and movement "
+               "area (runways, taxiways, etc.)."),
+             computer.notam.show_aerodrome);
+
+  AddBoolean(_("Show Obstacles"),
+             _("NOTAMs about new, changed or removed obstacles."),
+             computer.notam.show_obstacle);
+
+  AddBoolean(_("Show Activity Warnings"),
+             _("Advisory notices about hazardous activity that don't by "
+               "themselves make the airspace illegal to enter: air "
+               "displays, aerobatics, parachute jumping, UAS/drone "
+               "operations, live firing or blasting exercises, model "
+               "aircraft flying, etc."),
+             computer.notam.show_activity);
+
+  StringFormat(buffer, ARRAY_SIZE(buffer),
+               _("%u filtered"), stats.filtered_by_category);
   AddReadOnly("", nullptr, buffer);
 
   UpdateVisibility();
@@ -328,6 +376,7 @@ NOTAMConfigPanel::UpdateFilterCounts() noexcept
   SetFilterRowCount(TIME_FILTERED, stats.filtered_by_time);
   SetFilterRowCount(RADIUS_FILTERED, stats.filtered_by_radius);
   SetFilterRowCount(QCODE_FILTERED, stats.filtered_by_qcode);
+  SetFilterRowCount(CATEGORY_FILTERED, stats.filtered_by_category);
 #endif
 }
 
@@ -339,6 +388,7 @@ NOTAMConfigPanel::ShowLoadingStatus() noexcept
   SetFilterRowLoading(TIME_FILTERED);
   SetFilterRowLoading(RADIUS_FILTERED);
   SetFilterRowLoading(QCODE_FILTERED);
+  SetFilterRowLoading(CATEGORY_FILTERED);
 #endif
 }
 
@@ -382,6 +432,14 @@ NOTAMConfigPanel::UpdateVisibility() noexcept
   SetRowAvailable(RADIUS_FILTERED, enabled);
   SetRowAvailable(HIDDEN_QCODES, enabled);
   SetRowAvailable(QCODE_FILTERED, enabled);
+  SetRowAvailable(CATEGORY_SPACER, enabled);
+  SetRowAvailable(SHOW_RESTRICTED, enabled);
+  SetRowAvailable(SHOW_NAVIGATION, enabled);
+  SetRowAvailable(SHOW_ENROUTE, enabled);
+  SetRowAvailable(SHOW_AERODROME, enabled);
+  SetRowAvailable(SHOW_OBSTACLE, enabled);
+  SetRowAvailable(SHOW_ACTIVITY, enabled);
+  SetRowAvailable(CATEGORY_FILTERED, enabled);
 #endif
 }
 
@@ -446,8 +504,29 @@ NOTAMConfigPanel::Save(bool &_changed) noexcept
   const bool show_only_effective_changed =
     SaveValue(SHOW_ONLY_EFFECTIVE, ProfileKeys::NOTAMShowOnlyEffective,
               computer.notam.show_only_effective);
+  const bool show_restricted_changed =
+    SaveValue(SHOW_RESTRICTED, ProfileKeys::NOTAMShowRestricted,
+              computer.notam.show_restricted);
+  const bool show_navigation_changed =
+    SaveValue(SHOW_NAVIGATION, ProfileKeys::NOTAMShowNavigation,
+              computer.notam.show_navigation);
+  const bool show_enroute_changed =
+    SaveValue(SHOW_ENROUTE, ProfileKeys::NOTAMShowEnRoute,
+              computer.notam.show_enroute);
+  const bool show_aerodrome_changed =
+    SaveValue(SHOW_AERODROME, ProfileKeys::NOTAMShowAerodrome,
+              computer.notam.show_aerodrome);
+  const bool show_obstacle_changed =
+    SaveValue(SHOW_OBSTACLE, ProfileKeys::NOTAMShowObstacle,
+              computer.notam.show_obstacle);
+  const bool show_activity_changed =
+    SaveValue(SHOW_ACTIVITY, ProfileKeys::NOTAMShowActivity,
+              computer.notam.show_activity);
   const bool filter_flags_changed =
-    show_ifr_changed || show_only_effective_changed;
+    show_ifr_changed || show_only_effective_changed ||
+    show_restricted_changed || show_navigation_changed ||
+    show_enroute_changed || show_aerodrome_changed ||
+    show_obstacle_changed || show_activity_changed;
   changed |= filter_flags_changed;
   
   // Radius filter - convert from user units to meters

@@ -332,6 +332,12 @@ constexpr std::string_view NOTAMShowOnlyEffective =
 constexpr std::string_view NOTAMMaxRadius = "NOTAMMaxRadius";
 constexpr std::string_view NOTAMHiddenQCodes = "NOTAMHiddenQCodes";
 constexpr std::string_view NOTAMApiUrl = "NOTAMApiUrl";
+constexpr std::string_view NOTAMShowRestricted = "NOTAMShowRestricted";
+constexpr std::string_view NOTAMShowNavigation = "NOTAMShowNavigation";
+constexpr std::string_view NOTAMShowEnRoute = "NOTAMShowEnRoute";
+constexpr std::string_view NOTAMShowAerodrome = "NOTAMShowAerodrome";
+constexpr std::string_view NOTAMShowObstacle = "NOTAMShowObstacle";
+constexpr std::string_view NOTAMShowActivity = "NOTAMShowActivity";
 
 constexpr std::string_view EnableLocationMapItem = "EnableLocationMapItem";
 constexpr std::string_view EnableArrivalAltitudeMapItem = "EnableArrivalAltitudeMapItem";

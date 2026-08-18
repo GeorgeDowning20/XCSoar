@@ -30,4 +30,12 @@ Profile::LoadNOTAMSettings(const ProfileMap &map, NOTAMSettings &settings)
   map.Get(ProfileKeys::NOTAMShowOnlyEffective, settings.show_only_effective);
   map.Get(ProfileKeys::NOTAMMaxRadius, settings.max_radius_m);
   map.Get(ProfileKeys::NOTAMHiddenQCodes, settings.hidden_qcodes);
+
+  // Category filter settings
+  map.Get(ProfileKeys::NOTAMShowRestricted, settings.show_restricted);
+  map.Get(ProfileKeys::NOTAMShowNavigation, settings.show_navigation);
+  map.Get(ProfileKeys::NOTAMShowEnRoute, settings.show_enroute);
+  map.Get(ProfileKeys::NOTAMShowAerodrome, settings.show_aerodrome);
+  map.Get(ProfileKeys::NOTAMShowObstacle, settings.show_obstacle);
+  map.Get(ProfileKeys::NOTAMShowActivity, settings.show_activity);
 }

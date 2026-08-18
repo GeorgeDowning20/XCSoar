@@ -67,7 +67,7 @@ MetadataValid(std::string_view json)
 int
 main()
 {
-  plan_tests(64);
+  plan_tests(83);
 
   const auto now = system_clock::now();
 
@@ -303,6 +303,72 @@ main()
     notam.end_time_permanent = true;
 
     ok1(notam.IsActive(now));
+  }
+
+  {
+    using NOTAMFilter::NOTAMCategory;
+
+    ok1(NOTAMFilter::ClassifyCategory("QRTCA") == NOTAMCategory::RESTRICTED);
+    ok1(NOTAMFilter::ClassifyCategory("QNBAS") == NOTAMCategory::NAVIGATION);
+    ok1(NOTAMFilter::ClassifyCategory("QICAS") == NOTAMCategory::NAVIGATION);
+    ok1(NOTAMFilter::ClassifyCategory("QPACH") == NOTAMCategory::ENROUTE);
+    ok1(NOTAMFilter::ClassifyCategory("QFALT") == NOTAMCategory::AERODROME);
+    ok1(NOTAMFilter::ClassifyCategory("QOBCE") == NOTAMCategory::OBSTACLE);
+    ok1(NOTAMFilter::ClassifyCategory("QWULW") == NOTAMCategory::ACTIVITY); // UAS
+    ok1(NOTAMFilter::ClassifyCategory("QWMAW") == NOTAMCategory::ACTIVITY); // live firing
+    ok1(NOTAMFilter::ClassifyCategory("QWZLW") == NOTAMCategory::ACTIVITY); // model a/c
+    ok1(NOTAMFilter::ClassifyCategory("") == NOTAMCategory::OTHER);
+    ok1(NOTAMFilter::ClassifyCategory("Q") == NOTAMCategory::OTHER);
+    ok1(NOTAMFilter::ClassifyCategory("QZZZZ") == NOTAMCategory::OTHER);
+  }
+
+  {
+    NOTAMSettings settings;
+    settings.show_restricted = false;
+
+    NOTAM notam;
+    notam.number = "R1234/26";
+    notam.traffic = "IV";
+    notam.start_time = now - hours(1);
+    notam.end_time = now + hours(1);
+    notam.feature_type = "QRTCA";
+
+    ok1(!NOTAMFilter::ShouldDisplay(notam, settings, now, false));
+
+    settings.show_restricted = true;
+    ok1(NOTAMFilter::ShouldDisplay(notam, settings, now, false));
+
+    settings.show_obstacle = false;
+    notam.feature_type = "QOBCE";
+    ok1(!NOTAMFilter::ShouldDisplay(notam, settings, now, false));
+
+    const auto stats =
+      NOTAMFilter::ComputeStats(std::vector<NOTAM>{notam}, settings, now);
+    ok1(stats.filtered_by_category == 1);
+  }
+
+  {
+    // Only "Restricted" enabled: UAS/live-firing/model-aircraft activity
+    // notices must NOT show, since they aren't legally no-fly airspace.
+    NOTAMSettings settings;
+    settings.show_restricted = true;
+    settings.show_navigation = false;
+    settings.show_enroute = false;
+    settings.show_aerodrome = false;
+    settings.show_obstacle = false;
+    settings.show_activity = false;
+
+    NOTAM notam;
+    notam.number = "W1234/26";
+    notam.traffic = "IV";
+    notam.start_time = now - hours(1);
+    notam.end_time = now + hours(1);
+    notam.feature_type = "QWMAW"; // live firing
+
+    ok1(!NOTAMFilter::ShouldDisplay(notam, settings, now, false));
+
+    notam.feature_type = "QRTCA"; // genuine restricted/danger area
+    ok1(NOTAMFilter::ShouldDisplay(notam, settings, now, false));
   }
 
   return exit_status();

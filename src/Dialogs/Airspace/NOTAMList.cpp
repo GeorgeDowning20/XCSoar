@@ -86,6 +86,10 @@ FormatFilterReasons(const NOTAMStruct &notam,
                                    NOTAMFilter::FilterReason::QCODE))
     AppendFilterReason(reasons, C_("Setting", "Q-Code"));
 
+  if (NOTAMFilter::HasFilterReason(filter_reasons,
+                                   NOTAMFilter::FilterReason::CATEGORY))
+    AppendFilterReason(reasons, C_("Setting", "category"));
+
   return reasons;
 }
 

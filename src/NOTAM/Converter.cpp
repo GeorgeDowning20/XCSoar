@@ -5,6 +5,7 @@
 
 #ifdef HAVE_HTTP
 #include "NOTAM.hpp"
+#include "Filter.hpp"
 #include "LogFile.hpp"
 #include "Geo/GeoPoint.hpp"
 #include "Math/Angle.hpp"
@@ -170,11 +171,24 @@ BuildNOTAMAirspace(const struct NOTAM &notam,
     std::string station_name = !notam.number.empty()
       ? notam.number
       : notam.id;
+
+    // Areas the pilot cannot legally enter (activated danger areas,
+    // (temporary) restricted/prohibited areas, military operating areas,
+    // ...) render red via the existing AirspaceClass::RESTRICTED colour
+    // instead of the generic grey NOTAM colour; GetType() stays NOTAM so
+    // all other NOTAM-specific handling (Q-code label, warnings, ...) is
+    // unaffected. See AbstractAirspace::GetTypeOrClass().
+    const AirspaceClass notam_class =
+      NOTAMFilter::ClassifyCategory(notam.feature_type) ==
+          NOTAMFilter::NOTAMCategory::RESTRICTED
+      ? AirspaceClass::RESTRICTED
+      : AirspaceClass::UNCLASSIFIED;
+
     airspace->SetProperties(
       std::move(name), // name
       std::move(station_name), // station_name
       TransponderCode(), // transponder_code
-      AirspaceClass::UNCLASSIFIED, // class
+      notam_class, // class
       AirspaceClass::NOTAM, // type
       base, // base altitude
       top // top altitude
