@@ -3,6 +3,7 @@
 
 #include "TwoTextRowsRenderer.hpp"
 #include "ui/canvas/Canvas.hpp"
+#include "ui/canvas/TextFormat.hpp"
 #include "Screen/Layout.hpp"
 #include "ui/dim/Rect.hpp"
 
@@ -61,7 +62,30 @@ TwoTextRowsRenderer::DrawSecondRow(Canvas &canvas, const PixelRect &rc,
 
   canvas.Select(*second_font);
   second_row_right_edge = rc.left + x + (int)canvas.CalcTextWidth(text);
-  canvas.DrawClippedText({rc.left + x, rc.top + second_y}, rc, text);
+
+  // leave the same margin on the right as the left inset, so wrapped
+  // text doesn't run to the very edge of the row
+  const int right = std::max(rc.left + x, rc.right - x);
+  const PixelRect wrap_rc{rc.left + x, rc.top, right, rc.top};
+  const int max_height = 2 * (int)second_font->GetLineSpacing();
+  const int height = std::min(max_height,
+                              (int)canvas.DrawFormattedText(wrap_rc, text,
+                                                            DT_CALCRECT));
+
+  // if wrapping the text pushes it past the bottom of the row, move
+  // it up (but not into the first row) so it still fits; never grow
+  // beyond two lines (drawn with this capped height, so a third line
+  // is clipped rather than attempted)
+  int top = second_y;
+  const int available = rc.bottom - rc.top - top;
+  if (height > available) {
+    const int min_top = first_y + (int)first_font->GetHeight();
+    top = std::max(min_top, rc.bottom - rc.top - height);
+  }
+
+  const PixelRect text_rc{rc.left + x, rc.top + top,
+                          right, rc.top + top + height};
+  canvas.DrawFormattedText(text_rc, text, DT_LEFT);
 }
 
 int

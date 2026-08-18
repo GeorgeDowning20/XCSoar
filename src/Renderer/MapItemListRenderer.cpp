@@ -43,6 +43,10 @@
 #include "FLARM/TrafficClimbAltIndicators.hpp"
 #include "Geo/GeoVector.hpp"
 #include "Interface.hpp"
+#include "Computer/Settings.hpp"
+#include "Engine/GlideSolvers/GlideState.hpp"
+#include "Engine/GlideSolvers/GlideResult.hpp"
+#include "Engine/GlideSolvers/MacCready.hpp"
 
 #include <optional>
 
@@ -385,8 +389,52 @@ Draw(Canvas &canvas, PixelRect rc,
         basic.location_available)
       distance = GeoVector{basic.location, traffic->location}.distance;
 
-    if (double(distance) > 0)
-      distance_string = FormatUserDistanceSmart(distance).c_str();
+    if (double(distance) > 0) {
+      char value_buffer[32];
+      const Unit unit = FormatUserDistanceSmart(distance, value_buffer, false);
+      distance_string.Format("%s%s", value_buffer, Units::GetUnitName(unit));
+    }
+  }
+
+  // Altitude and vario, formatted without a space before the unit to
+  // keep these compact FLARM traffic labels short
+  StaticString<32> altitude_string;
+  altitude_string.clear();
+  if (traffic != nullptr && traffic->altitude_available) {
+    char value_buffer[32];
+    FormatUserAltitude(traffic->altitude, value_buffer, false);
+    altitude_string.Format("%s%s", value_buffer,
+                           Units::GetUnitName(Units::GetUserAltitudeUnit()));
+  }
+
+  StaticString<32> vario_string;
+  vario_string.clear();
+  if (traffic != nullptr && traffic->climb_rate_avg30s_available) {
+    char value_buffer[32];
+    FormatUserVerticalSpeed(traffic->climb_rate_avg30s, value_buffer, false);
+    vario_string.Format("%s%s", value_buffer,
+                        Units::GetUnitName(Units::GetUserVerticalSpeedUnit()));
+  }
+
+  // Estimated time to reach the target's position/altitude, considering
+  // current MC setting, distance, height difference and wind
+  StaticString<32> dtim_string;
+  dtim_string.clear();
+  if (traffic != nullptr && traffic->location.IsValid() &&
+      traffic->altitude_available) {
+    const MoreData &basic = CommonInterface::Basic();
+    const ComputerSettings &settings = CommonInterface::GetComputerSettings();
+    if (basic.location_available && basic.NavAltitudeAvailable() &&
+        settings.polar.glide_polar_task.IsValid()) {
+      const GlideState glide_state(GeoVector(basic.location, traffic->location),
+                                   traffic->altitude, basic.nav_altitude,
+                                   CommonInterface::Calculated().GetWindOrZero());
+      const GlideResult result =
+        MacCready::Solve(settings.task.glide, settings.polar.glide_polar_task,
+                         glide_state);
+      if (result.IsOk())
+        dtim_string = FormatTimespanSmart(result.time_elapsed, 2).c_str();
+    }
   }
 
   // Time since last update, only meaningful while greyed out/fading
@@ -420,17 +468,16 @@ Draw(Canvas &canvas, PixelRect rc,
 
     info_string = FlarmTraffic::GetSourceString(traffic->source);
     if (!distance_string.empty())
-      info_string.AppendFormat(", %s: %s", _("Distance"), distance_string.c_str());
+      info_string.AppendFormat(", %s: %s", _("Dist"), distance_string.c_str());
 
-    if (traffic->altitude_available) {
-      info_string.AppendFormat(", %s: %s", _("Altitude"),
-                               FormatUserAltitude(traffic->altitude).c_str());
-    }
+    if (!altitude_string.empty())
+      info_string.AppendFormat(", %s: %s", _("Alt"), altitude_string.c_str());
 
-    if (traffic->climb_rate_avg30s_available) {
-      info_string.AppendFormat(", %s: %s", _("Vario"),
-                               FormatUserVerticalSpeed(traffic->climb_rate_avg30s).c_str());
-    }
+    if (!vario_string.empty())
+      info_string.AppendFormat(", %s: %s", _("Var"), vario_string.c_str());
+
+    if (!dtim_string.empty())
+      info_string.AppendFormat(", %s: %s", _("Dtim"), dtim_string.c_str());
 
     if (!last_seen_string.empty())
       info_string.AppendFormat(", %s", last_seen_string.c_str());
@@ -467,16 +514,16 @@ Draw(Canvas &canvas, PixelRect rc,
                                  FlarmTraffic::GetSourceString(traffic->source));
 
       if (!distance_string.empty())
-        info_string.AppendFormat(", %s: %s", _("Distance"), distance_string.c_str());
+        info_string.AppendFormat(", %s: %s", _("Dist"), distance_string.c_str());
 
-      if (traffic->altitude_available)
-        info_string.AppendFormat(", %s: %s", _("Altitude"),
-                                 FormatUserAltitude(traffic->altitude).c_str());
+      if (!altitude_string.empty())
+        info_string.AppendFormat(", %s: %s", _("Alt"), altitude_string.c_str());
 
-      if (traffic->climb_rate_avg30s_available) {
-        info_string.AppendFormat(", %s: %s", _("Vario"),
-                                 FormatUserVerticalSpeed(traffic->climb_rate_avg30s).c_str());
-      }
+      if (!vario_string.empty())
+        info_string.AppendFormat(", %s: %s", _("Var"), vario_string.c_str());
+
+      if (!dtim_string.empty())
+        info_string.AppendFormat(", %s: %s", _("Dtim"), dtim_string.c_str());
 
       if (!last_seen_string.empty())
         info_string.AppendFormat(", %s", last_seen_string.c_str());
