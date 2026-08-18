@@ -2,6 +2,9 @@ SQLITE ?= y
 
 ifeq ($(SQLITE),y)
 
-SQLITE_LDLIBS = -lsqlite3
+$(eval $(call pkg-config-library,LIBSQLITE,sqlite3))
+
+SQLITE_CPPFLAGS = $(LIBSQLITE_CPPFLAGS)
+SQLITE_LDLIBS = $(LIBSQLITE_LDLIBS)
 
 endif
