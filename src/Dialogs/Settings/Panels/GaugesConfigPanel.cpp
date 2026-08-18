@@ -19,6 +19,7 @@ enum ControlIndex {
   EnableThermalProfile,
   FinalGlideBarDisplayModeControl,
   EnableFinalGlideBarMC0,
+  FinalGlideBarUseSmoothTE,
   EnableVarioBar,
   NoPositionTargetDistanceRing
 };
@@ -120,6 +121,7 @@ GaugesConfigPanel::OnModified(DataField &df) noexcept
     const DataFieldEnum &dfe = (const DataFieldEnum &)df;
     FinalGlideBarDisplayMode fgbdm = (FinalGlideBarDisplayMode)dfe.GetValue();
     SetRowVisible(EnableFinalGlideBarMC0, fgbdm != FinalGlideBarDisplayMode::OFF);
+    SetRowVisible(FinalGlideBarUseSmoothTE, fgbdm != FinalGlideBarDisplayMode::OFF);
   }
 }
 
@@ -169,7 +171,19 @@ GaugesConfigPanel::Prepare(ContainerWindow &parent,
              map_settings.final_glide_bar_mc0_enabled);
   SetExpertRow(EnableFinalGlideBarMC0);
 
+  AddBoolean(_("Final glide bar smoothed TE"),
+             _("If set to \"On\" the final glide bar arrow shows the total-energy-compensated arrival altitude "
+                 "beyond 10 km from the finish, blending smoothly into the non-compensated value between 10 km "
+                 "and 5 km, and using the non-compensated value within 5 km of the finish. Falls back to the "
+                 "non-compensated value if TE compensation is unavailable."),
+             map_settings.final_glide_bar_use_smooth_te);
+  SetExpertRow(FinalGlideBarUseSmoothTE);
+
   SetRowVisible(EnableFinalGlideBarMC0,
+                map_settings.final_glide_bar_display_mode !=
+                  FinalGlideBarDisplayMode::OFF);
+
+  SetRowVisible(FinalGlideBarUseSmoothTE,
                 map_settings.final_glide_bar_display_mode !=
                   FinalGlideBarDisplayMode::OFF);
 
@@ -213,6 +227,9 @@ GaugesConfigPanel::Save(bool &_changed) noexcept
 
   changed |= SaveValue(EnableFinalGlideBarMC0, ProfileKeys::EnableFinalGlideBarMC0,
                        map_settings.final_glide_bar_mc0_enabled);
+
+  changed |= SaveValue(FinalGlideBarUseSmoothTE, ProfileKeys::FinalGlideBarUseSmoothTE,
+                       map_settings.final_glide_bar_use_smooth_te);
 
   changed |= SaveValue(EnableVarioBar, ProfileKeys::EnableVarioBar,
                        map_settings.vario_bar_enabled);

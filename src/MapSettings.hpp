@@ -224,6 +224,13 @@ struct MapSettings {
   /** FinalGlideBar display mode configuration */
   FinalGlideBarDisplayMode final_glide_bar_display_mode;
 
+  /**
+   * Use the smoothed, total-energy-compensated arrival altitude
+   * difference (blending into the non-TE value between 10 km and
+   * 5 km of the finish) for the main FinalGlideBar arrow.
+   */
+  bool final_glide_bar_use_smooth_te;
+
   /** Show Vario Bar arrow */
   bool vario_bar_enabled;
 

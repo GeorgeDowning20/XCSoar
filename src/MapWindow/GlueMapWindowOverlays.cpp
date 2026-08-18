@@ -24,8 +24,12 @@
 #include "Components.hpp"
 #include "BackendComponents.hpp"
 #include "Replay/Replay.hpp"
+#include "Geo/Gravity.hpp"
+#include "Math/Util.hpp"
+#include "Task/FinalGlideSmoothing.hpp"
 
 #include <algorithm> // for std::clamp()
+#include <limits>
 
 void
 GlueMapWindow::DrawGesture(Canvas &canvas) const noexcept
@@ -286,9 +290,38 @@ GlueMapWindow::DrawFinalGlide(Canvas &canvas,
       return;
   }
 
+  std::optional<double> altitude_difference_override;
+  if (GetMapSettings().final_glide_bar_use_smooth_te) {
+    const TaskStats &task_stats = Calculated().task_stats;
+    const GlideResult &solution = task_stats.total.solution_remaining;
+    const GlideSettings &glide_settings = GetComputerSettings().task.glide;
+
+    if (task_stats.task_valid && solution.IsAchievable()) {
+      const auto altitude_difference =
+        solution.SelectAltitudeDifference(glide_settings);
+
+      auto te_altitude_difference = std::numeric_limits<double>::quiet_NaN();
+      if (Basic().airspeed_available) {
+        const auto arrival_energy_height =
+          Square(solution.v_opt) / (2 * GRAVITY);
+        te_altitude_difference =
+          altitude_difference + Basic().energy_height - arrival_energy_height;
+      }
+
+      const auto distance = task_stats.total.remaining.IsDefined()
+        ? task_stats.total.remaining.GetDistance()
+        : std::numeric_limits<double>::quiet_NaN();
+
+      altitude_difference_override =
+        SmoothFinalAltitudeDifference(altitude_difference,
+                                      te_altitude_difference, distance);
+    }
+  }
+
   final_glide_bar_renderer.Draw(canvas, rc, Calculated(),
                                 GetComputerSettings().task.glide,
-                                GetMapSettings().final_glide_bar_mc0_enabled);
+                                GetMapSettings().final_glide_bar_mc0_enabled,
+                                altitude_difference_override);
 }
 
 void

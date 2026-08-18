@@ -241,14 +241,6 @@ static constexpr MetaData meta_data[] = {
     UpdateInfoBoxFinalAltitudeDiff,
   },
 
-  // e_SpeedEstimated
-  {
-    N_("Speed estimated"),
-    N_("V Est"),
-    N_("Average speed calculated from the current MacCready setting and glide polar."),
-    UpdateInfoBoxSpeedEstimated,
-  },
-
   // e_Fin_AltReq
   {
     N_("Final altitude required"),
@@ -1233,6 +1225,22 @@ static constexpr MetaData meta_data[] = {
     N_("Fin AltD TE"),
     N_("Arrival altitude at the final task turn point relative to the safety arrival height, compensated for total energy. Adds the excess kinetic energy currently carried (based on true airspeed) above what MacCready theory assumes you will have when arriving at the current MacCready speed-to-fly. Requires airspeed to be available."),
     UpdateInfoBoxFinalAltitudeDiffTE,
+  },
+
+  // e_SpeedEstimated
+  {
+    N_("Speed estimated"),
+    N_("V Est"),
+    N_("Average speed calculated from the current MacCready setting and glide polar."),
+    UpdateInfoBoxSpeedEstimated,
+  },
+
+  // e_Fin_AltDiff_Smooth
+  {
+    N_("Final altitude difference smooth"),
+    N_("Fin AltD Sm"),
+    N_("Arrival altitude at the final task turn point relative to the safety arrival height. Uses the total-energy-compensated value beyond 10 km from the finish, blends smoothly into the non-TE-compensated value between 10 km and 5 km, and uses the non-TE-compensated value within 5 km of the finish. Falls back to the non-TE-compensated value if TE compensation is unavailable."),
+    UpdateInfoBoxFinalAltitudeDiffSmooth,
   },
 
 };

@@ -180,6 +180,9 @@ void
 UpdateInfoBoxFinalAltitudeDiffTE(InfoBoxData &data) noexcept;
 
 void
+UpdateInfoBoxFinalAltitudeDiffSmooth(InfoBoxData &data) noexcept;
+
+void
 UpdateInfoBoxFinalMC0AltitudeDiff(InfoBoxData &data) noexcept;
 
 void

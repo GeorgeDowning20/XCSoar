@@ -158,6 +158,7 @@ namespace InfoBoxFactory
     e_GR_Avg_TE, /* Average glide ratio over ground during the configured averaging period, compensated for total energy (kinetic energy changes) in addition to altitude lost */
     e_Fin_AltDiff_TE, /* Arrival altitude at the final task turn point relative to the safety arrival height, compensated for total energy: adds the excess kinetic energy above what is assumed for arrival at the current MacCready speed-to-fly */
     e_SpeedEstimated, /* Average speed calculated from the current MacCready setting and glide polar. */
+    e_Fin_AltDiff_Smooth, /* Arrival altitude at the final task turn point relative to the safety arrival height. Uses the total-energy-compensated value beyond 10 km from the finish, blends smoothly into the non-TE-compensated value between 10 km and 5 km, and uses the non-TE-compensated value within 5 km of the finish. Falls back to the non-TE-compensated value if TE compensation is unavailable */
     e_NUM_TYPES /* Last item */
   };
 

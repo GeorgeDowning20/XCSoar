@@ -24,9 +24,11 @@
 #include "Geo/GeoVector.hpp"
 #include "Geo/Gravity.hpp"
 #include "Math/Util.hpp"
+#include "Task/FinalGlideSmoothing.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <string>
 
 static void
@@ -449,6 +451,40 @@ UpdateInfoBoxFinalAltitudeDiffTE(InfoBoxData &data) noexcept
     altitude_difference + basic.energy_height - arrival_energy_height;
 
   data.SetValueFromArrival(te_altitude_difference);
+}
+
+void
+UpdateInfoBoxFinalAltitudeDiffSmooth(InfoBoxData &data) noexcept
+{
+  const TaskStats &task_stats = CommonInterface::Calculated().task_stats;
+  const GlideResult &solution = task_stats.total.solution_remaining;
+
+  if (!task_stats.task_valid || !solution.IsAchievable()) {
+    data.SetInvalid();
+    return;
+  }
+
+  const auto &settings = CommonInterface::GetComputerSettings();
+  const auto altitude_difference =
+    solution.SelectAltitudeDifference(settings.task.glide);
+
+  const auto &basic = CommonInterface::Basic();
+  auto te_altitude_difference = std::numeric_limits<double>::quiet_NaN();
+  if (basic.airspeed_available) {
+    /* add the excess kinetic energy currently carried above what is
+       assumed for arrival at the MacCready cruise speed-to-fly */
+    const auto arrival_energy_height = Square(solution.v_opt) / (2 * GRAVITY);
+    te_altitude_difference =
+      altitude_difference + basic.energy_height - arrival_energy_height;
+  }
+
+  const auto distance = task_stats.total.remaining.IsDefined()
+    ? task_stats.total.remaining.GetDistance()
+    : std::numeric_limits<double>::quiet_NaN();
+
+  data.SetValueFromArrival(SmoothFinalAltitudeDifference(altitude_difference,
+                                                          te_altitude_difference,
+                                                          distance));
 }
 
 void

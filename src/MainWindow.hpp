@@ -557,6 +557,19 @@ protected:
   [[gnu::pure]]
   PixelRect GetSafeContentRect(const PixelRect &rc) const noexcept;
 
+  /**
+   * Like #GetSafeContentRect(), but for small decorative overlays
+   * (FLARM offscreen traffic markers) instead of tappable controls.
+   * iOS's safeAreaInsets are sized to keep touch targets away from the
+   * notch/Dynamic Island/home indicator, which leaves a much bigger
+   * gap than the cutout actually needs for markers that aren't
+   * interactive.  Only half of the reported inset is applied, so
+   * markers still clear the cutout without sitting noticeably further
+   * from it than from the other edges of the screen.
+   */
+  [[gnu::pure]]
+  PixelRect GetTrafficSafeRect(const PixelRect &rc) const noexcept;
+
   PixelRect GetShowMenuButtonRect(const PixelRect rc) noexcept;
   PixelRect GetShowQuickMenuButtonRect(const PixelRect rc) noexcept;
   PixelRect GetShowZoomButtonRect(const PixelRect rc,

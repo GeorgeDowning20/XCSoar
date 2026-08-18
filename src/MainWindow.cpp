@@ -91,9 +91,61 @@ GetMapOverlayButtonRect(const PixelRect rc, int top) noexcept
 
 [[gnu::pure]]
 PixelRect
+MainWindow::GetSafeContentRect(const PixelRect &rc) const noexcept
+{
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+  const PixelRect safe = GetClientRect();
+  PixelRect result = rc;
+  if (result.left < safe.left)
+    result.left = safe.left;
+  if (result.top < safe.top)
+    result.top = safe.top;
+  if (result.right > safe.right)
+    result.right = safe.right;
+  if (result.bottom > safe.bottom)
+    result.bottom = safe.bottom;
+  return result;
+#else
+  return rc;
+#endif
+}
+
+[[gnu::pure]]
+PixelRect
+MainWindow::GetTrafficSafeRect(const PixelRect &rc) const noexcept
+{
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+  /* iOS's safe area inset is sized for text/buttons and includes extra
+     buffer beyond the actual notch/Dynamic Island cutout; clearing 3/4
+     of that inset is enough to stay out of the cutout itself while
+     trimming most of the excess gap for small traffic blob markers. */
+  const PixelRect raw = GetNativeScreenRect();
+  const PixelRect safe = GetClientRect();
+  PixelRect result = rc;
+  const int min_left = raw.left + (safe.left - raw.left) * 4 / 5;
+  const int min_top = raw.top + (safe.top - raw.top) * 4 / 5;
+  const int max_right = raw.right - (raw.right - safe.right) * 4 / 5;
+  const int max_bottom = raw.bottom;
+  if (result.left < min_left)
+    result.left = min_left;
+  if (result.top < min_top)
+    result.top = min_top;
+  if (result.right > max_right)
+    result.right = max_right;
+  if (result.bottom > max_bottom)
+    result.bottom = max_bottom;
+  return result;
+#else
+  return rc;
+#endif
+}
+
+[[gnu::pure]]
+PixelRect
 MainWindow::GetShowMenuButtonRect(const PixelRect rc) noexcept
 {
-  return GetMapOverlayButtonRect(rc, rc.top + Layout::GetTextPadding());
+  const PixelRect safe_rc = GetSafeContentRect(rc);
+  return GetMapOverlayButtonRect(safe_rc, safe_rc.top + Layout::GetTextPadding());
 }
 
 /**
@@ -120,12 +172,13 @@ MainWindow::GetShowQuickMenuButtonRect(const PixelRect rc) noexcept
 {
   const UISettings &settings = CommonInterface::GetUISettings();
   const unsigned padding = Layout::GetTextPadding();
+  const PixelRect safe_rc = GetSafeContentRect(rc);
 
-  int top = rc.top + int(padding);
+  int top = safe_rc.top + int(padding);
   if (settings.show_menu_button)
     top = GetShowMenuButtonRect(rc).bottom + int(padding);
 
-  return GetMapOverlayButtonRect(rc, top);
+  return GetMapOverlayButtonRect(safe_rc, top);
 }
 
 [[gnu::pure]]
@@ -135,8 +188,9 @@ MainWindow::GetShowZoomButtonRect(const PixelRect rc,
 {
   const UISettings &settings = CommonInterface::GetUISettings();
   const unsigned padding = Layout::GetTextPadding();
+  const PixelRect safe_rc = GetSafeContentRect(rc);
 
-  int top = rc.top + int(padding);
+  int top = safe_rc.top + int(padding);
   if (settings.show_quickmenu_button)
     top = GetShowQuickMenuButtonRect(rc).bottom + int(padding);
   else if (settings.show_menu_button)
@@ -148,7 +202,7 @@ MainWindow::GetShowZoomButtonRect(const PixelRect rc,
     top = zoom_in.bottom + int(padding);
   }
 
-  return GetMapOverlayButtonRect(rc, top);
+  return GetMapOverlayButtonRect(safe_rc, top);
 }
 
 #ifdef ANDROID
@@ -329,7 +383,9 @@ MainWindow::LayoutMapArea() noexcept
   #endif  
   
   map->Move(map_rect);
-  PixelRect traffic_visible_rect = visible_map_rect;
+  /* keep FLARM offscreen edge markers clear of the iOS safe area
+     (notch/Dynamic Island, home indicator) */
+  PixelRect traffic_visible_rect = GetTrafficSafeRect(visible_map_rect);
   traffic_visible_rect.Offset(-map_rect.left, -map_rect.top);
   map->SetTrafficVisibleRect(traffic_visible_rect);
   map->FullRedraw();

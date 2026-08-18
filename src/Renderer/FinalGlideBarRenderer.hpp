@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <optional>
+
 struct PixelRect;
 class Canvas;
 struct DerivedInfo;
@@ -23,8 +25,14 @@ public:
     return look;
   }
 
+  /**
+   * @param altitude_difference_override if set, overrides the main
+   * arrow's altitude difference (and displayed value) instead of
+   * using GlideResult::SelectAltitudeDifference()
+   */
   void Draw(Canvas &canvas, const PixelRect &rc,
             const DerivedInfo &calculated,
             const GlideSettings &glide_settings,
-            const bool final_glide_bar_mc0_enabled) const;
+            const bool final_glide_bar_mc0_enabled,
+            const std::optional<double> altitude_difference_override = std::nullopt) const;
 };

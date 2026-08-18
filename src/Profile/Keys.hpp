@@ -228,6 +228,7 @@ constexpr std::string_view PredictWindDrift = "PredictWindDrift";
 constexpr std::string_view WindArrowStyle = "WindArrowStyle";
 constexpr std::string_view EnableFinalGlideBarMC0 = "EnableFinalGlideBarMC0";
 constexpr std::string_view FinalGlideBarDisplayMode = "FinalGlideBarDisplayMode";
+constexpr std::string_view FinalGlideBarUseSmoothTE = "FinalGlideBarUseSmoothTE";
 constexpr std::string_view EnableVarioBar = "EnableVarioBar";
 constexpr std::string_view ShowFAITriangleAreas = "ShowFAITriangleAreas";
 constexpr std::string_view FAITriangleThreshold = "FAITriangleThreshold";

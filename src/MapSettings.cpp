@@ -57,6 +57,7 @@ MapSettings::SetDefaults() noexcept
   distance_rings_enabled = false;
   final_glide_bar_mc0_enabled = true;
   final_glide_bar_display_mode = FinalGlideBarDisplayMode::ON;
+  final_glide_bar_use_smooth_te = false;
   vario_bar_enabled = false;
   show_fai_triangle_areas = false;
   online_traffic_map_mode = DisplayOnlineTrafficMapMode::SYMBOL;

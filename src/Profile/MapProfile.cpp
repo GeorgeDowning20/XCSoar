@@ -139,6 +139,8 @@ Profile::Load(const ProfileMap &map, MapSettings &settings)
           settings.final_glide_bar_mc0_enabled);
   map.GetEnum(ProfileKeys::FinalGlideBarDisplayMode,
               settings.final_glide_bar_display_mode);
+  map.Get(ProfileKeys::FinalGlideBarUseSmoothTE,
+          settings.final_glide_bar_use_smooth_te);
   map.Get(ProfileKeys::ShowFAITriangleAreas,
           settings.show_fai_triangle_areas);
   ::Load(map, settings.fai_triangle_settings);
