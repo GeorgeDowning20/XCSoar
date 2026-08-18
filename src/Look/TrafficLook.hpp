@@ -43,7 +43,7 @@ struct TrafficLook {
 
   /** "Colourful traffic" palette, keyed by relative-altitude zone. */
   struct ColorfulTrafficColors {
-    struct Above {
+    struct AboveColors {
       static constexpr Color climb_good{0xff, 0x66, 0x66}; // light red
       static constexpr Color climb_up{0xff, 0xff, 0x66};   // light yellow
       static constexpr Color climb_down{0x66, 0x66, 0xff}; // light blue

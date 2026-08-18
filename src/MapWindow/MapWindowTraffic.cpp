@@ -26,7 +26,7 @@ static constexpr Color FLARM_TRAIL_CLIMB_COLOR{0xff, 0x00, 0x00};
 static constexpr Color FLARM_TRAIL_UP_COLOR{0xff, 0xff, 0x00};
 static constexpr Color FLARM_TRAIL_SINK_COLOR{0x00, 0x00, 0xff};
 
-/** Above this many offscreen blob markers, hide their labels to avoid clutter. */
+/** AboveColors this many offscreen blob markers, hide their labels to avoid clutter. */
 static constexpr unsigned MAX_OFFSCREEN_TRAFFIC_NAMES = 6;
 
 /**

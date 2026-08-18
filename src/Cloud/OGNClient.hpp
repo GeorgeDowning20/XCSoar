@@ -57,7 +57,7 @@ class OGNClient final : ConnectSocketHandler {
   OGNAprsHandler &handler;
 
   const std::string host;
-  const unsigned port;
+  unsigned port;
   const std::string user;
   const std::string pass;
 
@@ -70,9 +70,13 @@ class OGNClient final : ConnectSocketHandler {
   ConnectSocket connector;
   SocketEvent read_event;
   CoarseTimerEvent reconnect_timer;
+  CoarseTimerEvent receive_timeout;
 
   /** Remaining resolved addresses to try after the current one fails. */
   std::forward_list<AllocatedSocketAddress> pending_addresses;
+
+  /** Guards against synchronous re-entrancy (see TryNextAddress()). */
+  bool trying_next_address = false;
 
   std::string rx_buffer;
 
@@ -113,6 +117,7 @@ private:
   void OnSocketConnectError(std::exception_ptr error) noexcept override;
 
   void OnReconnectTimer() noexcept;
+  void OnReceiveTimeout() noexcept;
   void OnReadReady(unsigned events) noexcept;
 
   void BeginLookup() noexcept;
@@ -120,6 +125,8 @@ private:
   void TryNextAddress() noexcept;
   void SendLogin() noexcept;
   void CloseConnection() noexcept;
+  void ScheduleReceiveTimeout() noexcept;
+  void TogglePort() noexcept;
   void ScheduleReconnect() noexcept;
   void ConsumeInput(std::string_view chunk);
 };

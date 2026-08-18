@@ -7,6 +7,8 @@
 #include "event/Call.hxx"
 #include "event/net/cares/Channel.hxx"
 #include "net/SocketAddress.hxx"
+#include "net/IPv4Address.hxx"
+#include "net/IPv6Address.hxx"
 #include "util/BindMethod.hxx"
 #include "util/SpanCast.hxx"
 #include "util/PrintException.hxx"
@@ -21,8 +23,29 @@
 namespace {
 constexpr auto CONNECT_TIMEOUT = std::chrono::seconds(15);
 constexpr auto RECONNECT_DELAY = std::chrono::seconds(25);
+constexpr auto RECEIVE_TIMEOUT = std::chrono::minutes(2);
+constexpr unsigned APRS_FILTER_PORT = 14580;
+constexpr unsigned APRS_ALTERNATE_PORT = 14501;
 constexpr std::size_t RX_BUFFER_CAPACITY = 16384;
 } // namespace
+
+/**
+ * Synthesize an IPv6 candidate for an IPv4 address using the RFC 6052
+ * well-known NAT64 prefix (64:ff9b::/96).  On IPv6-only/NAT64 cellular
+ * networks (common on iOS carriers), literal IPv4 addresses have no
+ * route at all, so a plain connect() fails instantly with "No route to
+ * host" regardless of which port is tried; this gives such networks a
+ * usable path when the carrier's NAT64 gateway uses the standard
+ * prefix instead of a custom one.
+ */
+static AllocatedSocketAddress
+SynthesizeNat64(const IPv4Address &v4) noexcept
+{
+  const uint32_t a = v4.GetNumericAddress();
+  return AllocatedSocketAddress(IPv6Address(0x0064, 0xff9b, 0, 0, 0, 0,
+                                            uint16_t(a >> 16), uint16_t(a),
+                                            v4.GetPort()));
+}
 
 OGNClient::OGNClient(EventLoop &_loop, Cares::Channel &_cares,
                      OGNAprsHandler &_handler,
@@ -41,7 +64,8 @@ OGNClient::OGNClient(EventLoop &_loop, Cares::Channel &_cares,
     resolver_handler(*this),
     connector(loop, *this),
     read_event(loop, BIND_THIS_METHOD(OnReadReady)),
-    reconnect_timer(loop, BIND_THIS_METHOD(OnReconnectTimer)) {}
+    reconnect_timer(loop, BIND_THIS_METHOD(OnReconnectTimer)),
+    receive_timeout(loop, BIND_THIS_METHOD(OnReceiveTimeout)) {}
 
 OGNClient::~OGNClient() noexcept
 {
@@ -100,6 +124,7 @@ void
 OGNClient::InternalStop() noexcept
 {
   reconnect_timer.Cancel();
+  receive_timeout.Cancel();
   resolver_job.reset();
   CloseConnection();
 }
@@ -123,6 +148,23 @@ OGNClient::BeginLookup() noexcept
 void
 OGNClient::TryConnect(std::forward_list<AllocatedSocketAddress> addresses) noexcept
 {
+  /* collect the native IPv4 candidates before appending NAT64-
+     synthesized IPv6 ones after them, so normal networks are
+     unaffected and try order for the real addresses is unchanged */
+  std::forward_list<IPv4Address> native_v4;
+  for (const auto &a : addresses)
+    if (a.GetFamily() == AF_INET)
+      native_v4.emplace_front(a);
+
+  if (!native_v4.empty()) {
+    auto tail = addresses.before_begin();
+    for (auto it = addresses.begin(); it != addresses.end(); ++it)
+      tail = it;
+
+    for (const auto &v4 : native_v4)
+      tail = addresses.emplace_after(tail, SynthesizeNat64(v4));
+  }
+
   pending_addresses = std::move(addresses);
   TryNextAddress();
 }
@@ -130,6 +172,19 @@ OGNClient::TryConnect(std::forward_list<AllocatedSocketAddress> addresses) noexc
 void
 OGNClient::TryNextAddress() noexcept
 {
+  if (trying_next_address) {
+    /* ConnectSocket::Connect() calls OnSocketConnectError()
+       synchronously for an immediate failure (e.g. "No route to
+       host"), which re-enters this function while the outer call's
+       own loop below is still on the stack; let that outer loop carry
+       on with the next address itself instead of running the
+       exhaustion handling (port-fallback/reconnect) once per
+       recursion level. */
+    return;
+  }
+
+  trying_next_address = true;
+
   while (!pending_addresses.empty()) {
     AllocatedSocketAddress a = std::move(pending_addresses.front());
     pending_addresses.pop_front();
@@ -137,8 +192,22 @@ OGNClient::TryNextAddress() noexcept
     if (connector.IsPending())
       connector.Cancel();
 
-    if (connector.Connect(a, CONNECT_TIMEOUT))
+    if (connector.Connect(a, CONNECT_TIMEOUT)) {
+      trying_next_address = false;
       return;
+    }
+  }
+
+  trying_next_address = false;
+
+  if (port == APRS_FILTER_PORT) {
+    /* Some mobile networks block the standard filtered APRS-IS port.
+       Retry the same OGN service on its alternate plain TCP port right
+       away, without waiting for the normal reconnect delay. */
+    TogglePort();
+    std::cerr << "OGN\tport-fallback\t" << host << ':' << port << std::endl;
+    BeginLookup();
+    return;
   }
 
   ScheduleReconnect();
@@ -166,6 +235,7 @@ OGNClient::OnSocketConnectSuccess(UniqueSocketDescriptor fd) noexcept
 
   read_event.Open(fd.Release());
   read_event.ScheduleRead();
+  ScheduleReceiveTimeout();
   rx_buffer.clear();
   try {
     rx_buffer.reserve(RX_BUFFER_CAPACITY);
@@ -206,6 +276,7 @@ OGNClient::SendLogin() noexcept
 void
 OGNClient::CloseConnection() noexcept
 {
+  receive_timeout.Cancel();
   read_event.Close();
   pending_addresses.clear();
 
@@ -214,8 +285,26 @@ OGNClient::CloseConnection() noexcept
 }
 
 void
+OGNClient::ScheduleReceiveTimeout() noexcept
+{
+  receive_timeout.Schedule(RECEIVE_TIMEOUT);
+}
+
+void
+OGNClient::TogglePort() noexcept
+{
+  port = port == APRS_FILTER_PORT ? APRS_ALTERNATE_PORT : APRS_FILTER_PORT;
+}
+
+void
 OGNClient::ScheduleReconnect() noexcept
 {
+  /* alternate ports on every reconnect cycle instead of latching onto
+     whichever one TryNextAddress last fell back to: a network that
+     blocks one APRS-IS port (or resets the connection right after
+     accepting it) may still allow the other one. */
+  TogglePort();
+
   std::cerr << "OGN\treconnect\t" << host << ':' << port
             << "\tin=" << RECONNECT_DELAY.count() << "s" << std::endl;
   CloseConnection();
@@ -226,6 +315,16 @@ void
 OGNClient::OnReconnectTimer() noexcept
 {
   BeginLookup();
+}
+
+void
+OGNClient::OnReceiveTimeout() noexcept
+{
+  if (!read_event.IsDefined())
+    return;
+
+  std::cerr << "OGN\treceive-timeout\t" << host << ':' << port << std::endl;
+  ScheduleReconnect();
 }
 
 void
@@ -254,6 +353,8 @@ OGNClient::OnReadReady(unsigned events) noexcept
 
   if (GetEnvBool("XCS_CLOUD_DEBUG"))
     std::cerr << "OGN\trx\t" << nbytes << " bytes" << std::endl;
+
+  ScheduleReceiveTimeout();
 
   try {
     ConsumeInput({(const char *)buf.data(), (std::size_t)nbytes});

@@ -108,7 +108,7 @@ AudioVarioConfigPanel::Prepare(ContainerWindow &parent,
   db_min.SetFormat(GetUserVerticalSpeedFormat(false, true));
 
   AddFloat(_("Deadband max. lift"),
-           _("Above this lift threshold the vario will start to play sounds if the 'Deadband' feature is enabled."),
+           _("AboveColors this lift threshold the vario will start to play sounds if the 'Deadband' feature is enabled."),
            "%.1f %s", "%.1f",
            0, Units::ToUserVSpeed(2),
            GetUserVerticalSpeedStep(), false, UnitGroup::VERTICAL_SPEED,

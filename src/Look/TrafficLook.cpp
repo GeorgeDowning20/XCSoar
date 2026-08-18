@@ -12,9 +12,9 @@ TrafficLook::Initialise(const Font &_font)
   basic_traffic_brushes.same.Create(same_color);
   basic_traffic_brushes.below.Create(below_color);
 
-  colorful_traffic_brushes.above.climb_good.Create(ColorfulTrafficColors::Above::climb_good);
-  colorful_traffic_brushes.above.climb_up.Create(ColorfulTrafficColors::Above::climb_up);
-  colorful_traffic_brushes.above.climb_down.Create(ColorfulTrafficColors::Above::climb_down);
+  colorful_traffic_brushes.above.climb_good.Create(ColorfulTrafficColors::AboveColors::climb_good);
+  colorful_traffic_brushes.above.climb_up.Create(ColorfulTrafficColors::AboveColors::climb_up);
+  colorful_traffic_brushes.above.climb_down.Create(ColorfulTrafficColors::AboveColors::climb_down);
 
   colorful_traffic_brushes.same.climb_good.Create(ColorfulTrafficColors::Same::climb_good);
   colorful_traffic_brushes.same.climb_up.Create(ColorfulTrafficColors::Same::climb_up);
@@ -107,11 +107,11 @@ TrafficLook::GetColourfulTrafficColor(const TrafficClimbAltIndicators &indicator
   case TrafficClimbAltIndicators::RelAlt::ABOVE:
     switch (indicators.GetClimb()) {
     case TrafficClimbAltIndicators::Climb::GOOD:
-      return ColorfulTrafficColors::Above::climb_good;
+      return ColorfulTrafficColors::AboveColors::climb_good;
     case TrafficClimbAltIndicators::Climb::UP:
-      return ColorfulTrafficColors::Above::climb_up;
+      return ColorfulTrafficColors::AboveColors::climb_up;
     case TrafficClimbAltIndicators::Climb::DOWN:
-      return ColorfulTrafficColors::Above::climb_down;
+      return ColorfulTrafficColors::AboveColors::climb_down;
     }
     break;
   case TrafficClimbAltIndicators::RelAlt::BELOW:

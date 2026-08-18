@@ -246,7 +246,8 @@ FlarmTrafficDetailsWidget::UpdateChanging(const MoreData &basic)
   // Fill "last seen" field (only meaningful while greyed out/fading)
   if (target_ok && is_fading) {
     const auto elapsed = Validity(basic.clock).GetTimeDifference(target->valid);
-    StringFormatUnsafe(tmp, "%s %s", FormatTimespanSmart(elapsed).c_str(), _("ago"));
+    StringFormat(tmp, sizeof(tmp), "%s %s",
+                 FormatTimespanSmart(elapsed).c_str(), _("ago"));
     value = tmp;
   } else
     value = "--";
