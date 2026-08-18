@@ -548,6 +548,15 @@ protected:
   bool OnMouseDouble(PixelPoint p) noexcept override;
   bool OnKeyDown(unsigned key_code) noexcept override;
   void OnPaint(Canvas &canvas) noexcept override;
+
+  /**
+   * On iOS, clip #rc to the device safe area (excludes the
+   * notch/Dynamic Island and home indicator).  On other platforms,
+   * #rc is returned unchanged.
+   */
+  [[gnu::pure]]
+  PixelRect GetSafeContentRect(const PixelRect &rc) const noexcept;
+
   PixelRect GetShowMenuButtonRect(const PixelRect rc) noexcept;
   PixelRect GetShowQuickMenuButtonRect(const PixelRect rc) noexcept;
   PixelRect GetShowZoomButtonRect(const PixelRect rc,

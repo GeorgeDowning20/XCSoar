@@ -16,6 +16,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <vector>
 
 #ifdef ENABLE_OPENGL
 #include "ui/canvas/opengl/Scope.hpp"
@@ -25,6 +27,15 @@ static constexpr size_t MAX_RENDERED_FLARM_TRAIL_SEGMENTS = 256;
 static constexpr Color FLARM_TRAIL_CLIMB_COLOR{0xff, 0x00, 0x00};
 static constexpr Color FLARM_TRAIL_UP_COLOR{0xff, 0xff, 0x00};
 static constexpr Color FLARM_TRAIL_SINK_COLOR{0x00, 0x00, 0xff};
+
+/** Length, before display scaling, of one on+off dash cycle of a trail. */
+static constexpr double FLARM_TRAIL_DASH_CYCLE_PIXELS = 8.;
+
+/**
+ * Fraction (from the newest end) of a trail's #max_age_s that stays
+ * fully solid before the "FLARM trace fade" dashing starts to kick in.
+ */
+static constexpr double FLARM_TRAIL_FADE_SOLID_FRACTION = 0.2;
 
 /** AboveColors this many offscreen blob markers, hide their labels to avoid clutter. */
 static constexpr unsigned MAX_OFFSCREEN_TRAFFIC_NAMES = 6;
@@ -48,11 +59,45 @@ GetTrafficLabel(const FlarmTraffic &traffic, char (&buffer)[16]) noexcept
   return nullptr;
 }
 
+/**
+ * Draws a line from #from to #to, split into dashes: within every
+ * #cycle_length screen pixels, only the first #on_length pixels are
+ * drawn.  #on_length >= #cycle_length draws a solid line; #on_length
+ * <= 0 draws nothing.
+ */
+static void
+DrawDashedLine(Canvas &canvas, PixelPoint from, PixelPoint to,
+              double on_length, double cycle_length) noexcept
+{
+  if (on_length >= cycle_length) {
+    canvas.DrawLine(from, to);
+    return;
+  }
+
+  if (on_length <= 0.)
+    return;
+
+  const double dx = to.x - from.x, dy = to.y - from.y;
+  const double length = std::hypot(dx, dy);
+  if (length <= 0.)
+    return;
+
+  for (double pos = 0.; pos < length; pos += cycle_length) {
+    const double end = std::min(pos + on_length, length);
+    const double t0 = pos / length, t1 = end / length;
+    canvas.DrawLine({from.x + (int)std::lround(dx * t0),
+                     from.y + (int)std::lround(dy * t0)},
+                    {from.x + (int)std::lround(dx * t1),
+                     from.y + (int)std::lround(dy * t1)});
+  }
+}
+
 static void
 DrawFlarmTrail(Canvas &canvas, const WindowProjection &projection,
                const std::deque<FlarmTrailPoint> &trail,
                double set_mc,
-               double current_30s_vario, unsigned width) noexcept
+               double current_30s_vario, unsigned width,
+               TimeStamp now, double max_age_s, bool fade_enabled) noexcept
 {
   if (trail.size() < 2)
     return;
@@ -66,11 +111,31 @@ DrawFlarmTrail(Canvas &canvas, const WindowProjection &projection,
         : FLARM_TRAIL_SINK_COLOR;
   };
 
+  const double dash_cycle = Layout::Scale(FLARM_TRAIL_DASH_CYCLE_PIXELS);
+
   const auto draw_segment = [&](size_t begin, size_t end) noexcept {
     canvas.Select(Pen(Pen::Style::SOLID, Layout::ScalePenWidth(width),
                       get_color(trail[end].climb_rate_avg30s)));
-    canvas.DrawLine(projection.GeoToScreen(trail[begin].location),
-                    projection.GeoToScreen(trail[end].location));
+
+    /* the older a segment, the closer it gets to falling off the end
+       of the trail, so shrink its dashes proportionally towards
+       nothing; the newest FLARM_TRAIL_FADE_SOLID_FRACTION of the
+       trail's lifetime stays solid, then the dash fraction degrades
+       linearly to zero */
+    double on_fraction = 1.;
+    if (fade_enabled && max_age_s > 0.) {
+      const double age = 0.5 * ((now - trail[begin].time).count() +
+                                (now - trail[end].time).count());
+      const double solid_age_s = FLARM_TRAIL_FADE_SOLID_FRACTION * max_age_s;
+      const double fade_age_s = max_age_s - solid_age_s;
+      on_fraction = fade_age_s > 0.
+        ? std::clamp(1. - (age - solid_age_s) / fade_age_s, 0., 1.)
+        : (age <= solid_age_s ? 1. : 0.);
+    }
+
+    DrawDashedLine(canvas, projection.GeoToScreen(trail[begin].location),
+                  projection.GeoToScreen(trail[end].location),
+                  dash_cycle * on_fraction, dash_cycle);
   };
 
   const size_t segment_count = trail.size() - 1;
@@ -88,6 +153,37 @@ DrawFlarmTrail(Canvas &canvas, const WindowProjection &projection,
     draw_segment(previous, trail.size() - 1);
 }
 
+/**
+ * Draw order priority for offscreen blob markers, derived from the
+ * same climb classification as the "Colourful traffic" palette
+ * (good climb ~ red, average climb ~ yellow, sinking ~ blue).
+ * Markers are drawn in ascending priority so that red blobs always
+ * end up on top of yellow ones, which end up on top of blue ones,
+ * regardless of the order targets appear in the traffic list.
+ */
+static unsigned
+GetOffscreenMarkerZOrder(const FlarmTraffic &traffic, double set_mc,
+                         double current_30s_vario) noexcept
+{
+  const auto indicators = TrafficClimbAltIndicators::GetClimbAltIndicators(
+    traffic, set_mc, current_30s_vario);
+  switch (indicators.GetClimb()) {
+  case TrafficClimbAltIndicators::Climb::DOWN:
+    return 0;
+  case TrafficClimbAltIndicators::Climb::UP:
+    return 1;
+  case TrafficClimbAltIndicators::Climb::GOOD:
+    return 2;
+  }
+  return 0;
+}
+
+/** An offscreen marker whose drawing is deferred until after sorting by z-order. */
+struct PendingOffscreenMarker {
+  PixelPoint position;
+  const FlarmTraffic *traffic;
+};
+
 static void
 DrawOffscreenFlarmMarker(Canvas &canvas, PixelPoint position,
                          const PixelRect &map_rect, const TrafficLook &look,
@@ -96,7 +192,8 @@ DrawOffscreenFlarmMarker(Canvas &canvas, PixelPoint position,
                          double current_30s_vario,
                          DisplayOnlineTrafficMapMode online_mode,
                          unsigned marker_scale_percent,
-                         bool show_names) noexcept
+                         bool show_names,
+                         double climb_rate_distance_m) noexcept
 {
   const auto indicators = TrafficClimbAltIndicators::GetClimbAltIndicators(
     traffic, set_mc, current_30s_vario);
@@ -143,6 +240,17 @@ DrawOffscreenFlarmMarker(Canvas &canvas, PixelPoint position,
     mode.vertical_position = TextInBoxMode::ABOVE;
     mode.move_in_view = true;
     TextInBox(canvas, label, position, mode, map_rect);
+  }
+
+  if (!fading && traffic.climb_rate_avg30s >= 0.1 &&
+      traffic.distance <= climb_rate_distance_m) {
+    TextInBoxMode climb_mode;
+    climb_mode.shape = LabelShape::OUTLINED;
+    climb_mode.align = TextInBoxMode::CENTER;
+    climb_mode.vertical_position = TextInBoxMode::BELOW;
+    climb_mode.move_in_view = true;
+    TextInBox(canvas, FormatUserVerticalSpeed(traffic.climb_rate_avg30s, false),
+              position, climb_mode, map_rect);
   }
 }
 
@@ -238,10 +346,16 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
   const bool colorful_traffic = GetMapSettings().use_detailed_flarm_colours;
   const bool trails_enabled = GetMapSettings().traffic_trail_enabled;
   const unsigned trail_width = (unsigned)GetMapSettings().traffic_trail_width;
+  const bool trail_fade_enabled = GetMapSettings().traffic_trail_fade_enabled;
   const unsigned marker_scale_percent =
     (unsigned)GetMapSettings().traffic_offscreen_marker_size;
+  const double climb_rate_distance =
+    GetMapSettings().traffic_offscreen_climb_rate_distance;
   const double set_mc = GetComputerSettings().polar.glide_polar_task.GetMC();
   const double current_30s_vario = Calculated().average;
+  const TimeStamp now = Basic().clock;
+  const double trail_max_age_s =
+    GetMapSettings().traffic_trail_length_minutes * 60.;
 
   // Count offscreen blob markers first so we can hide their labels when
   // there would be too many of them cluttering the map edge.
@@ -259,6 +373,17 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
   }
   const bool show_offscreen_names = offscreen_count <= MAX_OFFSCREEN_TRAFFIC_NAMES;
 
+  // Offscreen blob markers are collected here and drawn after sorting by
+  // z-order, so red blobs never end up hidden underneath yellow/blue ones.
+  std::vector<PendingOffscreenMarker> pending_markers;
+  pending_markers.reserve(offscreen_count);
+
+  const auto z_order_less = [set_mc, current_30s_vario](
+      const PendingOffscreenMarker &a, const PendingOffscreenMarker &b) noexcept {
+    return GetOffscreenMarkerZOrder(*a.traffic, set_mc, current_30s_vario) <
+      GetOffscreenMarkerZOrder(*b.traffic, set_mc, current_30s_vario);
+  };
+
   // Circle through the traffic targets
   for (const auto &traffic : flarm.list) {
     if (!traffic.location_available)
@@ -271,16 +396,14 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
     if (trails_enabled)
       if (const auto *trail = GetFlarmTrail(traffic.id))
         DrawFlarmTrail(canvas, projection, *trail, set_mc,
-                       current_30s_vario, trail_width);
+                       current_30s_vario, trail_width, now, trail_max_age_s,
+                       trail_fade_enabled);
 
     if (const auto marker =
           GetOffscreenTrafficMarkerPosition(projection, traffic_visible_rect,
                                             traffic.location,
                                             marker_scale_percent)) {
-      DrawOffscreenFlarmMarker(canvas, *marker, traffic_visible_rect,
-                               traffic_look, false, colorful_traffic, traffic,
-                               set_mc, current_30s_vario, online_mode,
-                               marker_scale_percent, show_offscreen_names);
+      pending_markers.push_back({*marker, &traffic});
       continue;
     }
 
@@ -296,7 +419,17 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
                        set_mc, current_30s_vario, scale_percent);
   }
 
+  std::stable_sort(pending_markers.begin(), pending_markers.end(), z_order_less);
+  for (const auto &pending : pending_markers)
+    DrawOffscreenFlarmMarker(canvas, pending.position, traffic_visible_rect,
+                             traffic_look, false, colorful_traffic,
+                             *pending.traffic, set_mc, current_30s_vario,
+                             online_mode, marker_scale_percent,
+                             show_offscreen_names, climb_rate_distance);
+
   if (const auto &fading = GetFadingFlarmTraffic(); !fading.empty()) {
+    std::vector<PendingOffscreenMarker> pending_fading_markers;
+
     for (const auto &[id, traffic] : fading) {
       assert(traffic.location_available);
 
@@ -307,16 +440,14 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
       if (trails_enabled)
         if (const auto *trail = GetFlarmTrail(traffic.id))
           DrawFlarmTrail(canvas, projection, *trail, set_mc,
-                         current_30s_vario, trail_width);
+                         current_30s_vario, trail_width, now, trail_max_age_s,
+                         trail_fade_enabled);
 
       if (const auto marker =
         GetOffscreenTrafficMarkerPosition(projection, traffic_visible_rect,
                                               traffic.location,
                                               marker_scale_percent)) {
-        DrawOffscreenFlarmMarker(canvas, *marker, traffic_visible_rect,
-                                 traffic_look, true, colorful_traffic, traffic,
-                                 set_mc, current_30s_vario, online_mode,
-                                 marker_scale_percent, show_offscreen_names);
+        pending_fading_markers.push_back({*marker, &traffic});
         continue;
       }
 
@@ -326,6 +457,15 @@ MapWindow::DrawFLARMTraffic(Canvas &canvas,
                          aircraft_pos, traffic, online_mode,
                          set_mc, current_30s_vario, scale_percent);
     }
+
+    std::stable_sort(pending_fading_markers.begin(), pending_fading_markers.end(),
+                     z_order_less);
+    for (const auto &pending : pending_fading_markers)
+      DrawOffscreenFlarmMarker(canvas, pending.position, traffic_visible_rect,
+                               traffic_look, true, colorful_traffic,
+                               *pending.traffic, set_mc, current_30s_vario,
+                               online_mode, marker_scale_percent,
+                               show_offscreen_names, climb_rate_distance);
   }
 }
 

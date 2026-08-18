@@ -48,8 +48,10 @@ MapSettings::SetDefaults() noexcept
   traffic_trail_enabled = false;
   traffic_trail_length_minutes = 10;
   traffic_trail_width = 1;
+  traffic_trail_fade_enabled = true;
   traffic_trail_memory_limit_mb = 100;
   traffic_offscreen_marker_size = 100;
+  traffic_offscreen_climb_rate_distance = 10000; /* 10 km */
   traffic_icon_scale = 100;
   show_thermal_profile = true;
   distance_rings_enabled = false;

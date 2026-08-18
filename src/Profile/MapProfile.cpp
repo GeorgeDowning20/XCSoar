@@ -124,10 +124,13 @@ Profile::Load(const ProfileMap &map, MapSettings &settings)
   map.Get(ProfileKeys::TrafficTrailEnabled, settings.traffic_trail_enabled);
   map.Get(ProfileKeys::TrafficTrailLength, settings.traffic_trail_length_minutes);
   map.Get(ProfileKeys::TrafficTrailWidth, settings.traffic_trail_width);
+  map.Get(ProfileKeys::TrafficTrailFadeEnabled, settings.traffic_trail_fade_enabled);
     map.Get(ProfileKeys::TrafficTrailMemoryLimit,
       settings.traffic_trail_memory_limit_mb);
       map.Get(ProfileKeys::TrafficOffscreenMarkerSize,
         settings.traffic_offscreen_marker_size);
+  map.Get(ProfileKeys::TrafficOffscreenClimbRateDistance,
+          settings.traffic_offscreen_climb_rate_distance);
   map.Get(ProfileKeys::TrafficIconScale, settings.traffic_icon_scale);
 
   map.Get(ProfileKeys::EnableThermalProfile, settings.show_thermal_profile);

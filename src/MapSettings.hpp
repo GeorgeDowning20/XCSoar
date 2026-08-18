@@ -186,11 +186,25 @@ struct MapSettings {
   /** Width of FLARM traffic trails in pixels (1-10). */
   int traffic_trail_width;
 
+  /**
+   * Fade FLARM traffic trails from solid to dashed as they age
+   * ("FLARM trace fade")?  If disabled, trails stay solid until they
+   * fall off the end of the trail.
+   */
+  bool traffic_trail_fade_enabled;
+
   /** Maximum RAM used by FLARM traffic trails in MiB (10-500). */
   int traffic_trail_memory_limit_mb;
 
   /** Off-screen FLARM traffic marker size in percent of the default (50-200). */
   int traffic_offscreen_marker_size;
+
+  /**
+   * Maximum distance (in metres) at which an off-screen FLARM traffic
+   * "blob" marker at the map edge still shows its climb rate text,
+   * default 10 km.
+   */
+  double traffic_offscreen_climb_rate_distance;
 
   /**
    * Map FLARM/GliderLink traffic symbol size in percent of the default

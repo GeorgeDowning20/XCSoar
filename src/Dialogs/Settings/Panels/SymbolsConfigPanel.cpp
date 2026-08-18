@@ -21,8 +21,10 @@ enum ControlIndex {
   TRAFFIC_TRAIL_ENABLED,
   TRAFFIC_TRAIL_LENGTH,
   TRAFFIC_TRAIL_WIDTH,
+  TRAFFIC_TRAIL_FADE_ENABLED,
   TRAFFIC_TRAIL_MEMORY_LIMIT,
   TRAFFIC_OFFSCREEN_MARKER_SIZE,
+  TRAFFIC_OFFSCREEN_CLIMB_RATE_DISTANCE,
   TRAFFIC_ICON_SCALE,
   TRAIL_LENGTH,
   TRAIL_DRIFT,
@@ -76,6 +78,7 @@ SymbolsConfigPanel::OnModified(DataField &df) noexcept
     const DataFieldBoolean &dfb = (const DataFieldBoolean &)df;
     SetRowVisible(TRAFFIC_TRAIL_LENGTH, dfb.GetValue());
     SetRowVisible(TRAFFIC_TRAIL_WIDTH, dfb.GetValue());
+    SetRowVisible(TRAFFIC_TRAIL_FADE_ENABLED, dfb.GetValue());
     SetRowVisible(TRAFFIC_TRAIL_MEMORY_LIMIT, dfb.GetValue());
   }
 }
@@ -188,6 +191,13 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
              settings_map.traffic_trail_width);
   SetExpertRow(TRAFFIC_TRAIL_WIDTH);
 
+  AddBoolean(_("FLARM trace fade"),
+             _("Fade traffic trails from solid to dashed as they age, so the "
+               "newest 20% of a trail stays solid and the rest thins out "
+               "until it disappears."),
+             settings_map.traffic_trail_fade_enabled);
+  SetExpertRow(TRAFFIC_TRAIL_FADE_ENABLED);
+
   AddInteger(_("Traffic trail memory limit"),
              _("Maximum RAM used by FLARM traffic trails."),
              "%u MiB", "%u", 10, 500, 10,
@@ -199,6 +209,14 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
              "%u %%", "%u", 50, 200, 10,
              settings_map.traffic_offscreen_marker_size);
   SetExpertRow(TRAFFIC_OFFSCREEN_MARKER_SIZE);
+
+  AddFloat(_("Traffic marker climb rate distance"),
+           _("An off-screen FLARM traffic marker at the map edge shows its "
+             "climb rate text only while the target is within this distance."),
+           "%.1f %s", "%.1f", 0, 50, 1, false,
+           UnitGroup::DISTANCE,
+           settings_map.traffic_offscreen_climb_rate_distance);
+  SetExpertRow(TRAFFIC_OFFSCREEN_CLIMB_RATE_DISTANCE);
 
   AddInteger(_("Traffic icon size"),
              _("Size of FLARM/GliderLink traffic symbols on the map as a "
@@ -262,6 +280,7 @@ SymbolsConfigPanel::Prepare([[maybe_unused]] ContainerWindow &parent,
   SetRowVisible(TRAFFIC_FADE_TIMEOUT, settings_map.fade_traffic);
   SetRowVisible(TRAFFIC_TRAIL_LENGTH, settings_map.traffic_trail_enabled);
   SetRowVisible(TRAFFIC_TRAIL_WIDTH, settings_map.traffic_trail_enabled);
+  SetRowVisible(TRAFFIC_TRAIL_FADE_ENABLED, settings_map.traffic_trail_enabled);
   SetRowVisible(TRAFFIC_TRAIL_MEMORY_LIMIT, settings_map.traffic_trail_enabled);
 }
 
@@ -296,6 +315,9 @@ SymbolsConfigPanel::Save(bool &_changed) noexcept
   changed |= SaveValueInteger(TRAFFIC_TRAIL_WIDTH, ProfileKeys::TrafficTrailWidth,
                               settings_map.traffic_trail_width);
 
+  changed |= SaveValue(TRAFFIC_TRAIL_FADE_ENABLED, ProfileKeys::TrafficTrailFadeEnabled,
+                       settings_map.traffic_trail_fade_enabled);
+
   changed |= SaveValueInteger(TRAFFIC_TRAIL_MEMORY_LIMIT,
                               ProfileKeys::TrafficTrailMemoryLimit,
                               settings_map.traffic_trail_memory_limit_mb);
@@ -303,6 +325,11 @@ SymbolsConfigPanel::Save(bool &_changed) noexcept
   changed |= SaveValueInteger(TRAFFIC_OFFSCREEN_MARKER_SIZE,
                               ProfileKeys::TrafficOffscreenMarkerSize,
                               settings_map.traffic_offscreen_marker_size);
+
+  changed |= SaveValue(TRAFFIC_OFFSCREEN_CLIMB_RATE_DISTANCE,
+                       UnitGroup::DISTANCE,
+                       ProfileKeys::TrafficOffscreenClimbRateDistance,
+                       settings_map.traffic_offscreen_climb_rate_distance);
 
   changed |= SaveValueInteger(TRAFFIC_ICON_SCALE, ProfileKeys::TrafficIconScale,
                               settings_map.traffic_icon_scale);
