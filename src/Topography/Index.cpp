@@ -178,7 +178,10 @@ ParseTopographyIndexLine(const char *line) noexcept
       p = endptr;
     }
 
-    entry.color = {red, green, blue, alpha};
+    if (entry.name.find("road") != std::string_view::npos)
+      entry.color = {190, 175, 105, alpha};
+    else
+      entry.color = {red, green, blue, alpha};
 
     return entry;
 }

@@ -6,6 +6,7 @@
 #include "Widget/ListWidget.hpp"
 #include "Widget/TwoWidgets.hpp"
 #include "Widget/RowFormWidget.hpp"
+#include "Form/Button.hpp"
 #include "Renderer/TwoTextRowsRenderer.hpp"
 #include "ui/canvas/Canvas.hpp"
 #include "Screen/Layout.hpp"
@@ -16,6 +17,7 @@
 #include "FLARM/Global.hpp"
 #include "FLARM/TrafficDatabases.hpp"
 #include "util/StaticString.hxx"
+#include "util/StringAPI.hxx"
 #include "Language/Language.hpp"
 #include "UIGlobals.hpp"
 #include "Look/DialogLook.hpp"
@@ -27,6 +29,9 @@
 #include "FLARM/Traffic.hpp"
 #include "Engine/Waypoint/Waypoints.hpp"
 #include "Pan.hpp"
+#include "Profile/Profile.hpp"
+
+#include <algorithm>
 
 #ifdef HAVE_SKYLINES_TRACKING
 #include "Components.hpp"
@@ -45,6 +50,38 @@ enum Buttons {
   DETAILS,
   MAP,
 };
+
+/**
+ * How the #TrafficListWidget orders its rows.
+ */
+enum class TrafficSortMode : uint8_t {
+  /** Nearest target first. */
+  DISTANCE,
+  /** Highest absolute altitude first. */
+  ALTITUDE,
+  /** Highest climb rate first. */
+  VARIO,
+  /** Alphabetical by call sign. */
+  CALLSIGN,
+};
+
+[[gnu::const]]
+static const char *
+GetSortModeCaption(TrafficSortMode mode) noexcept
+{
+  switch (mode) {
+  case TrafficSortMode::DISTANCE:
+    return _("Sort: Nearest");
+  case TrafficSortMode::ALTITUDE:
+    return _("Sort: Altitude");
+  case TrafficSortMode::VARIO:
+    return _("Sort: Vario");
+  case TrafficSortMode::CALLSIGN:
+    return _("Sort: Call sign");
+  }
+
+  return _("Sort");
+}
 
 class TrafficListButtons;
 
@@ -85,6 +122,13 @@ class TrafficListWidget : public ListWidget, public DataFieldListener,
      * location (if known).  Check GeoVector::IsValid().
      */
     GeoVector vector = GeoVector::Invalid();
+
+    /** This object's absolute altitude, valid iff #altitude_available. */
+    double altitude = 0;
+    bool altitude_available = false;
+
+    /** This object's climb rate, valid iff #vector is valid. */
+    double climb_rate = 0;
 
     /**
      * The display name of the SkyLines account.
@@ -132,6 +176,8 @@ class TrafficListWidget : public ListWidget, public DataFieldListener,
 
   TwoTextRowsRenderer row_renderer;
 
+  TrafficSortMode sort_mode = TrafficSortMode::DISTANCE;
+
 public:
   TrafficListWidget(WndForm &_dialog,
                     const FlarmId *array, size_t count)
@@ -148,7 +194,14 @@ public:
                     TrafficListButtons &_buttons)
     :dialog(_dialog), filter_widget(&_filter_widget),
      buttons(&_buttons) {
+    Profile::GetEnum(ProfileKeys::FlarmListSortMode, sort_mode);
   }
+
+  TrafficSortMode GetSortMode() const noexcept {
+    return sort_mode;
+  }
+
+  void CycleSortMode() noexcept;
 
   [[gnu::pure]]
   FlarmId GetCursorId() const {
@@ -190,6 +243,11 @@ private:
    * positions).
    */
   void UpdateVolatile();
+
+  /**
+   * Re-order #items according to #sort_mode and invalidate the list.
+   */
+  void SortItems();
 
   void UpdateButtons();
 
@@ -275,6 +333,8 @@ class TrafficListButtons : public RowFormWidget {
   WndForm &dialog;
   TrafficListWidget *list;
 
+  Button *sort_button = nullptr;
+
 public:
   TrafficListButtons(const DialogLook &look, WndForm &_dialog)
     :RowFormWidget(look), dialog(_dialog) {}
@@ -287,7 +347,14 @@ public:
                [[maybe_unused]] const PixelRect &rc) noexcept override {
     AddButton(_("Details"), [this](){ list->OpenDetails(); });
     AddButton(_("Map"), [this](){ list->OpenMap(); });
+    sort_button = AddButton(GetSortModeCaption(list->GetSortMode()),
+                           [this](){ list->CycleSortMode(); });
     AddButton(_("Close"), dialog.MakeModalResultCallback(mrCancel));
+  }
+
+  void UpdateSortLabel(TrafficSortMode mode) noexcept {
+    if (sort_button != nullptr)
+      sort_button->SetCaption(GetSortModeCaption(mode));
   }
 };
 
@@ -338,8 +405,6 @@ TrafficListWidget::UpdateVolatile()
 {
   const TrafficList &live_list = CommonInterface::Basic().flarm.traffic;
 
-  bool modified = false;
-
   /* determine the most recent time stamp in the #TrafficList; this is
      used to set the new last_update value */
   Validity max_time;
@@ -349,27 +414,103 @@ TrafficListWidget::UpdateVolatile()
     const FlarmTraffic *live = live_list.FindTraffic(i.id);
 
     if (live != nullptr) {
-      if (live->valid.Modified(last_update))
-        modified = true;
-
       if (live->valid.Modified(max_time))
         max_time = live->valid;
 
       i.location = live->location;
       i.vector = GeoVector(live->distance, live->track);
+      i.altitude = live->altitude;
+      i.altitude_available = live->altitude_available;
+      i.climb_rate = live->climb_rate;
     } else {
-      if (i.location.IsValid() || i.vector.IsValid())
-        modified = true;
-
       i.location.SetInvalid();
       i.vector.SetInvalid();
+      i.altitude_available = false;
     }
   }
 
   last_update = max_time;
 
-  if (modified)
-    GetList().Invalidate();
+  /* re-sorting also invalidates the list so it gets redrawn */
+  SortItems();
+}
+
+void
+TrafficListWidget::SortItems()
+{
+  if (sort_mode == TrafficSortMode::CALLSIGN)
+    /* callsigns are lazy-loaded; make sure they're available for the
+       comparisons below */
+    for (auto &i : items)
+      i.AutoLoad();
+
+  std::stable_sort(items.begin(), items.end(),
+                   [this](const Item &a, const Item &b){
+    switch (sort_mode) {
+    case TrafficSortMode::ALTITUDE:
+      if (a.altitude_available != b.altitude_available)
+        return a.altitude_available;
+      if (a.altitude_available)
+        return a.altitude > b.altitude;
+      break;
+
+    case TrafficSortMode::VARIO:
+      if (a.vector.IsValid() != b.vector.IsValid())
+        return a.vector.IsValid();
+      if (a.vector.IsValid())
+        return a.climb_rate > b.climb_rate;
+      break;
+
+    case TrafficSortMode::CALLSIGN: {
+      const bool ea = a.info.callsign.empty(), eb = b.info.callsign.empty();
+      if (ea != eb)
+        return !ea;
+      if (!ea) {
+        const int cmp = StringCollate(a.info.callsign.c_str(),
+                                      b.info.callsign.c_str());
+        if (cmp != 0)
+          return cmp < 0;
+      }
+      break;
+    }
+
+    case TrafficSortMode::DISTANCE:
+      break;
+    }
+
+    /* tie-break (and default order for DISTANCE): nearest first */
+    if (a.vector.IsValid() != b.vector.IsValid())
+      return a.vector.IsValid();
+
+    return a.vector.IsValid() && a.vector.distance < b.vector.distance;
+  });
+
+  GetList().Invalidate();
+}
+
+void
+TrafficListWidget::CycleSortMode() noexcept
+{
+  switch (sort_mode) {
+  case TrafficSortMode::DISTANCE:
+    sort_mode = TrafficSortMode::ALTITUDE;
+    break;
+  case TrafficSortMode::ALTITUDE:
+    sort_mode = TrafficSortMode::VARIO;
+    break;
+  case TrafficSortMode::VARIO:
+    sort_mode = TrafficSortMode::CALLSIGN;
+    break;
+  case TrafficSortMode::CALLSIGN:
+    sort_mode = TrafficSortMode::DISTANCE;
+    break;
+  }
+
+  Profile::SetEnum(ProfileKeys::FlarmListSortMode, sort_mode);
+  SortItems();
+
+  if (buttons != nullptr)
+    buttons->UpdateSortLabel(sort_mode);
 }
 
 void
@@ -475,14 +616,25 @@ TrafficListWidget::OnPaintItem(Canvas &canvas, PixelRect rc,
 
   row_renderer.DrawFirstRow(canvas, rc, tmp);
 
-  /* draw bearing and distance on the right */
+  /* draw distance/altitude on the right of the first row, and
+     bearing/vario on the right of the second row */
   if (item.vector.IsValid()) {
-    row_renderer.DrawRightFirstRow(canvas, rc,
-                                            FormatUserDistanceSmart(item.vector.distance).c_str());
+    PixelRect first_rc = rc;
+    first_rc.right = row_renderer.DrawRightFirstRow(canvas, first_rc,
+                                                    FormatUserDistanceSmart(item.vector.distance).c_str());
 
-    // Draw leg bearing
-    rc.right = row_renderer.DrawRightSecondRow(canvas, rc,
-                                               FormatBearing(item.vector.bearing).c_str());
+    if (item.altitude_available)
+      row_renderer.DrawRightFirstRow(canvas, first_rc,
+                                     FormatUserAltitude(item.altitude).c_str());
+
+    PixelRect second_rc = rc;
+    second_rc.right = row_renderer.DrawRightSecondRow(canvas, second_rc,
+                                                      FormatBearing(item.vector.bearing).c_str());
+
+    second_rc.right = row_renderer.DrawRightSecondRow(canvas, second_rc,
+                                                      FormatUserVerticalSpeed(item.climb_rate).c_str());
+
+    rc.right = second_rc.right;
   }
 
   if (!info.IsEmpty()) {

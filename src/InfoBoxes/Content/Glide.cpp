@@ -3,6 +3,7 @@
 
 #include "InfoBoxes/Content/Glide.hpp"
 #include "Engine/Util/Gradient.hpp"
+#include "Formatter/GlideRatioFormatter.hpp"
 #include "InfoBoxes/Data.hpp"
 #include "Interface.hpp"
 
@@ -63,7 +64,8 @@ UpdateInfoBoxGRAvg(InfoBoxData &data) noexcept
 void
 UpdateInfoBoxGRAvgTE(InfoBoxData &data) noexcept
 {
-  const auto average_gr_te = CommonInterface::Calculated().average_gr_te;
+  const auto &calculated = CommonInterface::Calculated();
+  const auto average_gr_te = calculated.average_gr_te;
 
   if (average_gr_te == 0) {
     data.SetInvalid();
@@ -75,8 +77,19 @@ UpdateInfoBoxGRAvgTE(InfoBoxData &data) noexcept
     data.SetValue("^^^");
   else if (!::GradientValid(average_gr_te))
     data.SetValue("+++");
-  else
+  else {
     data.SetValueFromGlideRatio(average_gr_te);
+
+    const auto &task_stats = calculated.task_stats;
+    const auto final_gr = task_stats.total.gradient;
+    data.SetCommentInvalid();
+    if (task_stats.task_valid && final_gr > 0 && ::GradientValid(final_gr)) {
+      FormatGlideRatio(data.comment.buffer(), data.comment.capacity(),
+                       final_gr);
+      if (average_gr_te > final_gr)
+        data.SetAllColors(3);
+    }
+  }
 }
 
 void

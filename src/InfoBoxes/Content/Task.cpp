@@ -12,6 +12,7 @@
 #include "Engine/Util/Gradient.hpp"
 #include "Engine/Waypoint/Waypoint.hpp"
 #include "Units/Units.hpp"
+#include "Formatter/GlideRatioFormatter.hpp"
 #include "Formatter/TimeFormatter.hpp"
 #include "Formatter/UserUnits.hpp"
 #include "Language/Language.hpp"
@@ -134,15 +135,7 @@ InfoBoxContentNextWaypoint::Update(InfoBoxData &data) noexcept
   }
 
   data.SetTitle(way_point->name.c_str());
-
-  // Set Comment
-  if (way_point->radio_frequency.IsDefined()) {
-    const unsigned freq = way_point->radio_frequency.GetKiloHertz();
-    data.FmtComment("{}.{:03} {}",
-                    freq / 1000, freq % 1000, way_point->comment);
-  }
-  else
-    data.SetComment(way_point->comment.c_str());
+  data.SetCommentInvalid();
 
   const NMEAInfo &basic = CommonInterface::Basic();
   const TaskStats &task_stats = CommonInterface::Calculated().task_stats;
@@ -158,6 +151,7 @@ InfoBoxContentNextWaypoint::Update(InfoBoxData &data) noexcept
   // Set Value
   Angle Value = vector_remaining.bearing - basic.track;
   data.SetValueFromBearingDifference(Value);
+  data.SetCommentFromDistance(vector_remaining.distance);
 
   // Set Color (blue/black)
   data.SetValueColor(solution_remaining.IsFinalGlide() ? 2 : 0);

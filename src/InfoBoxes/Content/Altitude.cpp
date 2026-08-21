@@ -64,7 +64,8 @@ UpdateInfoBoxAltitudeIGC(InfoBoxData &data) noexcept
   }
 
   data.SetValueFromAltitude(*a);
-  data.SetCommentFromAlternateAltitude(*a);
+  const auto altitude_ft = Units::ToUserUnit(*a, Unit::FEET);
+  data.FmtComment("FL{:03}", iround(altitude_ft / 100));
 }
 
 void
