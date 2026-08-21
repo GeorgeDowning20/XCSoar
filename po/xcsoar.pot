@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: xcsoar\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-12 23:20+0200\n"
+"POT-Creation-Date: 2026-08-21 17:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -392,6 +392,10 @@ msgid "Distance"
 msgstr ""
 
 msgid "Rel. Alt."
+msgstr ""
+
+#, c++-format
+msgid "Targets: {}"
 msgstr ""
 
 msgid "Details"
@@ -966,6 +970,24 @@ msgid "Thermal"
 msgstr ""
 
 msgid "Avg. lift"
+msgstr ""
+
+msgid "Last seen"
+msgstr ""
+
+msgid "ago"
+msgstr ""
+
+msgid "Dist"
+msgstr ""
+
+msgid "Alt"
+msgstr ""
+
+msgid "Var"
+msgstr ""
+
+msgid "Dtim"
 msgstr ""
 
 msgid "Traffic"
@@ -2788,6 +2810,11 @@ msgid "radius"
 msgstr ""
 
 #, no-c-format
+msgctxt "Setting"
+msgid "category"
+msgstr ""
+
+#, no-c-format
 msgctxt "Button"
 msgid "Show Q-code"
 msgstr ""
@@ -3068,6 +3095,21 @@ msgstr ""
 msgid "Invalid"
 msgstr ""
 
+msgid "Sort: Nearest"
+msgstr ""
+
+msgid "Sort: Altitude"
+msgstr ""
+
+msgid "Sort: Vario"
+msgstr ""
+
+msgid "Sort: Call sign"
+msgstr ""
+
+msgid "Sort"
+msgstr ""
+
 msgid "Competition ID"
 msgstr ""
 
@@ -3076,6 +3118,9 @@ msgid "Map"
 msgstr ""
 
 msgid "Team"
+msgstr ""
+
+msgid "Traffic list"
 msgstr ""
 
 msgid "Callsign"
@@ -3522,6 +3567,7 @@ msgstr ""
 msgid "Remaining distance"
 msgstr ""
 
+#, no-c-format
 msgid "Speed estimated"
 msgstr ""
 
@@ -4006,6 +4052,42 @@ msgstr ""
 msgid "Space-separated Q-code prefixes to hide (e.g., QA QK QN QOA QOL)."
 msgstr ""
 
+msgid "Show Restricted Areas"
+msgstr ""
+
+msgid "Airspace you cannot legally enter: prohibited/restricted areas, activated danger areas, temporary restricted areas, military operating areas and airspace reservations. Shown in red on the map."
+msgstr ""
+
+msgid "Show Navigation Warnings"
+msgstr ""
+
+msgid "NOTAMs about navigation aids, ILS, GNSS and communication/radar facilities."
+msgstr ""
+
+msgid "Show En-Route Information"
+msgstr ""
+
+msgid "NOTAMs about airspace structure, ATS units and procedures (SIDs/STARs, approach procedures, etc.)."
+msgstr ""
+
+msgid "Show Aerodrome NOTAMs"
+msgstr ""
+
+msgid "NOTAMs about aerodrome facilities, lighting and movement area (runways, taxiways, etc.)."
+msgstr ""
+
+msgid "Show Obstacles"
+msgstr ""
+
+msgid "NOTAMs about new, changed or removed obstacles."
+msgstr ""
+
+msgid "Show Activity Warnings"
+msgstr ""
+
+msgid "Advisory notices about hazardous activity that don't by themselves make the airspace illegal to enter: air displays, aerobatics, parachute jumping, UAS/drone operations, live firing or blasting exercises, model aircraft flying, etc."
+msgstr ""
+
 msgid "No valid location."
 msgstr ""
 
@@ -4163,6 +4245,12 @@ msgid "Final glide bar MC0"
 msgstr ""
 
 msgid "If set to \"On\" the final glide bar will show a second arrow indicating the required height to reach the final waypoint at MC zero."
+msgstr ""
+
+msgid "Final glide bar smoothed TE"
+msgstr ""
+
+msgid "If set to \"On\" the final glide bar arrow shows the total-energy-compensated arrival altitude beyond 10 km from the finish, blending smoothly into the non-compensated value between 10 km and 5 km, and using the non-compensated value within 5 km of the finish. Falls back to the non-compensated value if TE compensation is unavailable."
 msgstr ""
 
 msgid "Vario bar"
@@ -4461,6 +4549,10 @@ msgid "18 Split in 3 rows"
 msgstr ""
 
 #, no-c-format
+msgid "16 Split"
+msgstr ""
+
+#, no-c-format
 msgid "8 Bottom or Right"
 msgstr ""
 
@@ -4494,6 +4586,14 @@ msgstr ""
 
 #, no-c-format
 msgid "10 Bottom or Right"
+msgstr ""
+
+#, no-c-format
+msgid "10 Bottom (single row, Landscape)"
+msgstr ""
+
+#, no-c-format
+msgid "12 iPad (1x12 Landscape / 2x6 Portrait)"
 msgstr ""
 
 #, no-c-format
@@ -5467,6 +5567,67 @@ msgstr ""
 msgid "Keep showing traffic for a while after it has disappeared."
 msgstr ""
 
+msgid "Traffic fade timeout"
+msgstr ""
+
+msgid "How long a FLARM target stays visible (greyed out) on the map after it disappears, before being removed entirely."
+msgstr ""
+
+msgid "Colourful traffic"
+msgstr ""
+
+msgid "Show traffic in different colours depending on the climb rate and relative altitude."
+msgstr ""
+
+msgid "Traffic trails"
+msgstr ""
+
+msgid "Draw a black trail behind each FLARM traffic target."
+msgstr ""
+
+msgid "Traffic trail length"
+msgstr ""
+
+msgid "How long a FLARM traffic trail is drawn."
+msgstr ""
+
+msgid "Traffic trail width"
+msgstr ""
+
+msgid "Width of FLARM traffic trails."
+msgstr ""
+
+msgid "FLARM trace fade"
+msgstr ""
+
+#, c-format
+msgid "Fade traffic trails from solid to dashed as they age, so the newest 20% of a trail stays solid and the rest thins out until it disappears."
+msgstr ""
+
+msgid "Traffic trail memory limit"
+msgstr ""
+
+msgid "Maximum RAM used by FLARM traffic trails."
+msgstr ""
+
+msgid "Traffic marker size"
+msgstr ""
+
+msgid "Size of off-screen FLARM traffic markers as a percentage of the default size."
+msgstr ""
+
+msgid "Traffic marker climb rate distance"
+msgstr ""
+
+msgid "An off-screen FLARM traffic marker at the map edge shows its climb rate text only while the target is within this distance."
+msgstr ""
+
+msgid "Traffic icon size"
+msgstr ""
+
+msgid "Size of FLARM/GliderLink traffic symbols on the map as a percentage of the default size."
+msgstr ""
+
 msgid "Trail length"
 msgstr ""
 
@@ -5492,6 +5653,12 @@ msgid "If the aircraft heading deviates from the current waypoint, markers are d
 msgstr ""
 
 msgid "Aircraft symbol"
+msgstr ""
+
+msgid "Aircraft icon size"
+msgstr ""
+
+msgid "Size of the own-ship aircraft symbol on the map as a percentage of the default size."
 msgstr ""
 
 #, no-c-format
@@ -6399,6 +6566,66 @@ msgstr ""
 msgid "%u TPs"
 msgstr ""
 
+msgid "name matching"
+msgstr ""
+
+msgid "position matching"
+msgstr ""
+
+msgid "No turn point of this task is in the waypoint file"
+msgstr ""
+
+msgid "These turn points are not in the waypoint file and have been LEFT OUT. The task is incomplete - check it before you fly!"
+msgstr ""
+
+msgid "These turn points are not named as SoaringSpot spells them. Check they are right before you fly!"
+msgstr ""
+
+msgid "Check the task"
+msgstr ""
+
+msgid "Turn points"
+msgstr ""
+
+msgid "not published"
+msgstr ""
+
+msgid "up to date"
+msgstr ""
+
+msgid "incomplete"
+msgstr ""
+
+msgid "SoaringSpot"
+msgstr ""
+
+msgid "No classes"
+msgstr ""
+
+msgid "No competitions"
+msgstr ""
+
+msgid "Competition"
+msgstr ""
+
+msgid "Select competition"
+msgstr ""
+
+msgid "Select class"
+msgstr ""
+
+msgid "Select task"
+msgstr ""
+
+msgid "Select a competition first"
+msgstr ""
+
+msgid "(all classes)"
+msgstr ""
+
+msgid "This function is not available on your platform yet."
+msgstr ""
+
 msgid "Relocate"
 msgstr ""
 
@@ -6935,7 +7162,7 @@ msgstr ""
 msgid "Deadband max. lift"
 msgstr ""
 
-msgid "Above this lift threshold the vario will start to play sounds if the 'Deadband' feature is enabled."
+msgid "AboveColors this lift threshold the vario will start to play sounds if the 'Deadband' feature is enabled."
 msgstr ""
 
 msgid "Master Volume"
@@ -7061,9 +7288,6 @@ msgid "Please enter the FOUR letter code of the desired station."
 msgstr ""
 
 msgid "Please enter four letters or digits only (ICAO station code)."
-msgstr ""
-
-msgid "This function is not available on your platform yet."
 msgstr ""
 
 msgid "SkySight API rate-limited. Retrying shortly."
@@ -7448,6 +7672,18 @@ msgstr ""
 #, no-c-format
 msgctxt "Setting"
 msgid "Own FLARM IDs"
+msgstr ""
+
+msgid "Enable OGN traffic"
+msgstr ""
+
+msgid "Connect directly to the Open Glider Network (OGN) APRS-IS feed and show received traffic using the regular FLARM traffic display."
+msgstr ""
+
+msgid "Only request OGN traffic within this distance of the current GPS position."
+msgstr ""
+
+msgid "Show this aircraft type as OGN traffic."
 msgstr ""
 
 #, no-c-format
@@ -8178,7 +8414,7 @@ msgid "Distance to home waypoint (if defined)."
 msgstr ""
 
 #, no-c-format
-msgid "Speed task achieved"
+msgid "Speed task achieved (Pirker)"
 msgstr ""
 
 #, no-c-format
@@ -8186,7 +8422,7 @@ msgid "V Task Ach"
 msgstr ""
 
 #, no-c-format
-msgid "Achieved cross-country speed while on current task, compensated for altitude. Equivalent to Pirker cross-country speed remaining."
+msgid "Achieved cross-country speed while on the current task, compensated for altitude using the current MacCready setting and glide polar. Equivalent to Pirker cross-country speed."
 msgstr ""
 
 #, no-c-format
@@ -8989,6 +9225,50 @@ msgstr ""
 
 #, no-c-format
 msgid "Previous waypoint: when an ordered task is loaded, automatically tracks the task waypoint before the active leg (the start waypoint when on the first leg). Displays the waypoint name, arrival altitude difference relative to the safety arrival height, and distance. Click to choose a different waypoint to display (task waypoints when a task is loaded, otherwise the full waypoint list); selection is informational only and never advances the task or sets a Goto. With a task loaded, choose \"Resume auto tracking\" at the top of the list to revert to automatic tracking."
+msgstr ""
+
+#, no-c-format
+msgid "GR average TE"
+msgstr ""
+
+#, no-c-format
+msgid "GR Avg TE"
+msgstr ""
+
+#, no-c-format
+msgid "Average total-energy-compensated glide ratio. The smaller value is the required Final GR, and the box turns green when the average glide ratio is above it."
+msgstr ""
+
+#, no-c-format
+msgid "Final altitude difference TE"
+msgstr ""
+
+#, no-c-format
+msgid "Fin AltD TE"
+msgstr ""
+
+#, no-c-format
+msgid "Arrival altitude at the final task turn point relative to the safety arrival height, compensated for total energy. Adds the excess kinetic energy currently carried (based on true airspeed) above what MacCready theory assumes you will have when arriving at the current MacCready speed-to-fly. Requires airspeed to be available."
+msgstr ""
+
+#, no-c-format
+msgid "V Est"
+msgstr ""
+
+#, no-c-format
+msgid "Average speed calculated from the current MacCready setting and glide polar."
+msgstr ""
+
+#, no-c-format
+msgid "Final altitude difference smooth"
+msgstr ""
+
+#, no-c-format
+msgid "Fin AltD Sm"
+msgstr ""
+
+#, no-c-format
+msgid "Arrival altitude at the final task turn point relative to the safety arrival height. Uses the total-energy-compensated value beyond 10 km from the finish, blends smoothly into the non-TE-compensated value between 10 km and 5 km, and uses the non-TE-compensated value within 5 km of the finish. Falls back to the non-TE-compensated value if TE compensation is unavailable."
 msgstr ""
 
 #, no-c-format
