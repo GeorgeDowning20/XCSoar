@@ -2,6 +2,7 @@
 // Copyright The XCSoar Project
 
 #include "Parser.hpp"
+#include "util/StringCompare.hxx"
 
 #include <algorithm>
 #include <cctype>
@@ -12,6 +13,19 @@
 #include <utility>
 
 using std::string_view_literals::operator""sv;
+
+/**
+ * Does #haystack end with #needle, ignoring case?  SoaringSpot does
+ * not consistently lower-case the extensions it prints, e.g. some
+ * contests publish "FOO.CUP" instead of "foo.cup".
+ */
+static bool
+EndsWithIgnoreCase(std::string_view haystack, std::string_view needle) noexcept
+{
+  return haystack.size() >= needle.size() &&
+    StringIsEqualIgnoreCase(haystack.substr(haystack.size() - needle.size()),
+                            needle);
+}
 
 namespace SoaringSpot {
 
@@ -287,9 +301,9 @@ ParseFiles(std::string_view html) noexcept
 
       file.name = ExtractText(group.ReadUntil("</a>"sv));
 
-      if (file.name.ends_with(".txt"))
+      if (EndsWithIgnoreCase(file.name, ".txt"sv))
         file.kind = FileKind::AIRSPACE;
-      else if (file.name.ends_with(".cup"))
+      else if (EndsWithIgnoreCase(file.name, ".cup"sv))
         file.kind = FileKind::WAYPOINT;
       else
         continue;
