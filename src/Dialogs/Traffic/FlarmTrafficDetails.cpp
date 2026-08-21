@@ -62,6 +62,7 @@ class FlarmTrafficDetailsWidget final
   WndForm &dialog;
 
   const FlarmId target_id;
+  bool open_traffic_list = false;
 
 public:
   FlarmTrafficDetailsWidget(WndForm &_dialog, FlarmId _target_id)
@@ -69,6 +70,10 @@ public:
      target_id(_target_id) {}
 
   void CreateButtons(WidgetDialog &buttons);
+
+  bool ShouldOpenTrafficList() const noexcept {
+    return open_traffic_list;
+  }
 
   /* virtual methods from Widget */
   void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
@@ -92,6 +97,7 @@ private:
   void OnCallsignClicked();
   void OnTeamClicked();
   void OnFriendColorClicked(FlarmColor color);
+  void OnTrafficListClicked();
 
   /* virtual methods from BlackboardListener */
   void OnGPSUpdate([[maybe_unused]] const MoreData &basic) override {
@@ -113,6 +119,7 @@ FlarmTrafficDetailsWidget::CreateButtons(WidgetDialog &buttons)
 
   buttons.AddButton(_("Clear"), [this](){ OnFriendColorClicked(FlarmColor::NONE); });
   buttons.AddButton(_("Team"), [this](){ OnTeamClicked(); });
+  buttons.AddButton(_("Traffic list"), [this](){ OnTrafficListClicked(); });
 }
 
 void
@@ -399,6 +406,13 @@ FlarmTrafficDetailsWidget::OnFriendColorClicked(FlarmColor color)
   dialog.SetModalResult(mrOK);
 }
 
+void
+FlarmTrafficDetailsWidget::OnTrafficListClicked()
+{
+  open_traffic_list = true;
+  dialog.SetModalResult(mrCancel);
+}
+
 /**
  * The function opens the FLARM Traffic Details dialog
  */
@@ -415,5 +429,9 @@ dlgFlarmTrafficDetailsShowModal(FlarmId id) noexcept
   widget->CreateButtons(dialog);
   dialog.AddButton(_("Close"), mrCancel);
   dialog.FinishPreliminary(widget);
-  return dialog.ShowModal() == mrOK;
+  const bool result = dialog.ShowModal() == mrOK;
+  if (widget->ShouldOpenTrafficList())
+    TrafficListDialog();
+
+  return result;
 }
